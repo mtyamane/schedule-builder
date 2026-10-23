@@ -1,0 +1,13 @@
+{
+  "name": "term-schedule-builder",
+  "version": "2.0.0",
+  "description": "Build a quarter or semester class schedule and export it to Google Calendar.",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "start": "npx --yes serve ."
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

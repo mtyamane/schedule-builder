@@ -1,0 +1,206 @@
+/* Course list cards and the add/edit course form. */
+
+.course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.course-list__empty {
+  padding: 22px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Course card. --course-color is set inline per card. */
+.course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.course-card__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.course-card__swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border-radius: 4px;
+  background: var(--course-color);
+}
+
+.course-card__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.course-card__title h3 {
+  font-family: var(--f-body);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.course-card__title h3 b {
+  font-family: var(--f-mono);
+  font-weight: 500;
+}
+
+.course-card__instructor {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.course-card__actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.course-card__meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0 0 0 24px;
+  list-style: none;
+  font-size: 13px;
+}
+
+.course-card__meetings li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.course-card__final {
+  margin: 0;
+  padding-left: 24px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.type-tag {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--course-color) 18%, var(--surface));
+  color: color-mix(in srgb, var(--course-color) 60%, var(--ink));
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+/* Editor form */
+.course-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.course-editor h3 {
+  font-size: 16px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.swatch-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 7px;
+  background: var(--swatch);
+  cursor: pointer;
+}
+
+.swatch-button[aria-pressed="true"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--surface);
+}
+
+.swatches input[type="color"] {
+  width: 34px;
+  height: 28px;
+  padding: 0 2px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.meeting-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.meeting-editor input,
+.meeting-editor select {
+  background: var(--surface);
+}
+
+.meeting-editor__head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meeting-editor__head-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.meeting-editor__head select {
+  width: auto;
+}
+
+.day-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.day-toggle {
+  min-width: 38px;
+  padding: 6px 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.day-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}

@@ -1,0 +1,294 @@
+/* Reusable controls: buttons, chips, cards, form fields, segmented controls, modal and toast. */
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--muted);
+}
+
+.btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn--primary:hover {
+  border-color: var(--accent);
+  filter: brightness(1.08);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn--ghost:hover {
+  background: var(--sunk);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.btn--danger {
+  color: var(--danger);
+}
+
+.btn--small {
+  padding: 4px 9px;
+  font-size: 13px;
+}
+
+/* Status chip in the header */
+.status-chip {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.status-chip--warn {
+  background: var(--warn-soft);
+  border-color: transparent;
+  color: var(--warn);
+}
+
+.status-chip--ok {
+  border-color: currentColor;
+  color: var(--ok);
+}
+
+/* Cards and section headings */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  font-size: 13px;
+}
+
+/* Form fields */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.field input,
+.field select {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+select {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+.input--large {
+  padding: 8px 10px;
+  font-family: var(--f-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.field-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.checkbox {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.error-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Segmented control: a row of mutually exclusive buttons */
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.segmented button {
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Modal dialog */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 14, 22, 0.5);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.modal h3 {
+  font-size: 18px;
+}
+
+.modal p {
+  margin: 0;
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 13px;
+}
+
+/* Collapsible help text */
+.help {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.help summary {
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.help ol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+}

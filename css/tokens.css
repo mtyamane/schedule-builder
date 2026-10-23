@@ -1,0 +1,58 @@
+/*
+ * Design tokens: colors, fonts and shared measurements.
+ * Every color is defined here for light mode and redefined for dark mode,
+ * so components only ever reference var(--token).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces and text */
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --sunk: #f6f8fb;
+  --ink: #18202f;
+  --muted: #5b667c;
+  --line: #d6dce7;
+  --grid: #e8ecf3;
+  --hatch: #e3e7ee;
+
+  /* Accent and status */
+  --accent: #2c3fc4;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3e7fb;
+  --warn: #a4510b;
+  --warn-soft: #fdf0e3;
+  --ok: #227a4a;
+  --danger: #b3261e;
+
+  /* Type */
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Shape */
+  --radius: 10px;
+  --hour: 46px; /* height of one hour on the calendar; overridden by personalize settings */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0f131b;
+    --surface: #171c27;
+    --sunk: #131823;
+    --ink: #e5e8f0;
+    --muted: #98a1b6;
+    --line: #2b3244;
+    --grid: #202737;
+    --hatch: #1d2330;
+    --accent: #8f9bff;
+    --accent-ink: #0f131b;
+    --accent-soft: #232a4a;
+    --warn: #f0a35c;
+    --warn-soft: #2e2216;
+    --ok: #6fcf97;
+    --danger: #ff8a80;
+  }
+}

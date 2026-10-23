@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Build a quarter or semester class schedule and export it to Google Calendar as .ics or .csv.">
+  <title>Term Schedule Builder</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/term.css">
+  <link rel="stylesheet" href="css/courses.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/personalize.css">
+
+  <!-- Scripts share the global TSB namespace and must load in this order. -->
+  <script defer src="js/core/constants.js"></script>
+  <script defer src="js/core/dates.js"></script>
+  <script defer src="js/core/holidays.js"></script>
+  <script defer src="js/core/color.js"></script>
+  <script defer src="js/core/schedule.js"></script>
+  <script defer src="js/core/week-view.js"></script>
+  <script defer src="js/core/event-text.js"></script>
+  <script defer src="js/export/ics.js"></script>
+  <script defer src="js/export/csv.js"></script>
+  <script defer src="js/export/pdf.js"></script>
+  <script defer src="js/ui/dom.js"></script>
+  <script defer src="js/ui/fonts.js"></script>
+  <script defer src="js/export/calendar-image.js"></script>
+  <script defer src="js/ui/store.js"></script>
+  <script defer src="js/ui/term-form.js"></script>
+  <script defer src="js/ui/holidays-panel.js"></script>
+  <script defer src="js/ui/course-list.js"></script>
+  <script defer src="js/ui/calendar-view.js"></script>
+  <script defer src="js/ui/personalize-panel.js"></script>
+  <script defer src="js/ui/toolbar.js"></script>
+  <script defer src="js/app.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1>Term Schedule Builder</h1>
+      <small>Quarter / Semester</small>
+    </div>
+    <div class="toolbar">
+      <span id="export-status" class="status-chip" hidden></span>
+      <button class="btn btn--primary" id="export-ics" title="Download an .ics calendar file">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg>
+        iCalendar
+      </button>
+      <button class="btn" id="export-csv">CSV</button>
+      <button class="btn" id="save-schedule" title="Save a file you can import later to keep editing">Save schedule</button>
+      <button class="btn btn--ghost" id="import-schedule">Import</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <main class="split">
+    <!-- Left / top: term settings and courses -->
+    <section class="pane pane--inputs" aria-label="Term and classes">
+      <div class="banner" id="example-banner">
+        <span>This is an example schedule so you can see how it works.</span>
+        <button class="btn btn--small" id="start-blank">Start blank</button>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>Term</h2>
+          <span class="eyebrow">Dates drive week 1 and exports</span>
+        </div>
+        <label class="field">Title (optional)
+          <input type="text" class="input--large" id="term-title" placeholder="Winter Quarter 2027">
+        </label>
+        <label class="field">Subtitle (optional)
+          <input type="text" id="term-subtitle" placeholder="Name, school, or credit total">
+        </label>
+        <div class="field-row">
+          <label class="field">First day of classes<input type="date" id="term-start"></label>
+          <label class="field">Last day of instruction<input type="date" id="term-end"></label>
+          <label class="field">Finals week begins (optional)<input type="date" id="term-finals"></label>
+        </div>
+        <p class="hint">If classes start midweek, week 1 blocks out the days before. Finals week uses the date above, or the week of your earliest final.</p>
+
+        <div class="section-head"><span class="eyebrow">Holidays · no classes</span></div>
+        <div class="auto-holidays">
+          <label class="checkbox"><input type="checkbox" id="auto-holidays"> Add common holidays automatically</label>
+          <select id="holiday-region" aria-label="Holiday location">
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            <option value="UK">United Kingdom (England &amp; Wales)</option>
+          </select>
+        </div>
+        <p class="hint" id="auto-holidays-hint" hidden>Holidays between the first day of classes and the end of finals week. Remove any your school doesn't observe, and add school-specific breaks below.</p>
+        <ul class="holiday-list" id="holiday-list"></ul>
+        <div class="holiday-form">
+          <label class="field">Date<input type="date" id="holiday-date"></label>
+          <label class="field">Label<input type="text" id="holiday-label" placeholder="Spring break"></label>
+          <button class="btn" id="holiday-add">Add holiday</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2>Classes</h2>
+          <span class="eyebrow" id="course-summary"></span>
+        </div>
+        <div class="course-list" id="course-list"></div>
+        <div><button class="btn btn--primary" id="add-course">+ Add class</button></div>
+      </div>
+    </section>
+
+    <!-- Right / bottom: calendar -->
+    <section class="pane pane--calendar" id="calendar-pane" aria-label="Weekly calendar">
+      <div class="calendar-heading">
+        <h2 id="calendar-title"></h2>
+        <p id="calendar-subtitle" hidden></p>
+      </div>
+
+      <div class="view-tabs" role="tablist" aria-label="Calendar view">
+        <button class="view-tab" role="tab" id="tab-week1" data-view="week1">First week</button>
+        <button class="view-tab" role="tab" id="tab-weekly" data-view="weekly">Regular week</button>
+        <button class="view-tab" role="tab" id="tab-finals" data-view="finals">Finals week</button>
+      </div>
+      <p class="calendar-note" id="calendar-note"></p>
+      <div class="calendar-scroll"><div id="calendar"></div></div>
+
+      <div class="calendar-actions">
+        <button class="btn" id="download-png">Download image (PNG)</button>
+        <button class="btn" id="download-pdf">Download printable PDF</button>
+        <button class="btn" id="print-calendar">Print</button>
+        <p class="hint">Uses the view shown above on a letter-size landscape page.</p>
+      </div>
+
+      <details class="personalize" id="personalize">
+        <summary>Personalize calendar</summary>
+        <div class="personalize__body">
+          <div class="personalize__group">
+            <span class="eyebrow">Font</span>
+            <div class="font-grid" id="font-grid"></div>
+          </div>
+
+          <div class="personalize__group">
+            <div class="option-row">
+              <span class="eyebrow">Text size</span>
+              <button class="btn btn--ghost btn--small" id="reset-sizes">Reset sizes</button>
+            </div>
+            <div class="segmented" role="group" aria-label="Overall size" data-setting="sizePreset">
+              <button data-value="S">Small</button>
+              <button data-value="M">Medium</button>
+              <button data-value="L">Large</button>
+              <button data-value="XL">Extra large</button>
+            </div>
+            <label class="size-slider"><span>Title</span><input type="range" id="size-title" data-size-key="title" min="70" max="160" step="5"><output id="size-title-value"></output></label>
+            <label class="size-slider"><span>Day headers</span><input type="range" id="size-day" data-size-key="day" min="70" max="160" step="5"><output id="size-day-value"></output></label>
+            <label class="size-slider"><span>Class blocks</span><input type="range" id="size-block" data-size-key="block" min="70" max="160" step="5"><output id="size-block-value"></output></label>
+            <label class="size-slider"><span>Time labels</span><input type="range" id="size-time" data-size-key="time" min="70" max="160" step="5"><output id="size-time-value"></output></label>
+          </div>
+
+          <div class="personalize__group">
+            <span class="eyebrow">Show in class blocks</span>
+            <div class="toggle-chips">
+              <label class="toggle-chip"><input type="checkbox" id="detail-name" data-detail="name"> Course name</label>
+              <label class="toggle-chip"><input type="checkbox" id="detail-time" data-detail="time"> Time</label>
+              <label class="toggle-chip"><input type="checkbox" id="detail-room" data-detail="room"> Room</label>
+              <label class="toggle-chip"><input type="checkbox" id="detail-instructor" data-detail="instructor"> Instructor</label>
+              <label class="toggle-chip"><input type="checkbox" id="detail-type" data-detail="type"> Section type</label>
+            </div>
+            <p class="hint">The course code always shows. Section types appear only for classes with more than one meeting type.</p>
+          </div>
+
+          <div class="personalize__group">
+            <span class="eyebrow">Layout</span>
+            <div class="option-row">
+              <span>Row height</span>
+              <div class="segmented" data-setting="rowHeight"><button data-value="compact">Compact</button><button data-value="normal">Normal</button><button data-value="roomy">Roomy</button></div>
+            </div>
+            <div class="option-row">
+              <span>Time format</span>
+              <div class="segmented" data-setting="clock"><button data-value="12">12-hour</button><button data-value="24">24-hour</button></div>
+            </div>
+            <div class="option-row">
+              <span>Block corners</span>
+              <div class="segmented" data-setting="corners"><button data-value="rounded">Rounded</button><button data-value="square">Square</button></div>
+            </div>
+          </div>
+
+          <div class="personalize__group">
+            <span class="eyebrow">Colors</span>
+            <div class="option-row">
+              <span>Block color</span>
+              <div class="segmented" data-setting="blockColor"><button data-value="soft">Soft</button><button data-value="bold">Bold</button></div>
+            </div>
+            <div class="option-row">
+              <span>Image background</span>
+              <div class="segmented" data-setting="imageBackground"><button data-value="white">White</button><button data-value="tint">Tinted</button><button data-value="dark">Dark</button></div>
+            </div>
+            <p class="hint">Image background applies to PNG, PDF and print. Block color applies everywhere.</p>
+          </div>
+        </div>
+      </details>
+
+      <details class="help">
+        <summary>Adding your schedule to Google Calendar</summary>
+        <ol>
+          <li>Click <b>iCalendar</b> to download your .ics file.</li>
+          <li>In Google Calendar, create a new calendar for the term first. Deleting that calendar later removes every class at once.</li>
+          <li>Go to Settings → Import &amp; export → Import, choose the .ics file, pick the new calendar, and click Import.</li>
+          <li>The .ics keeps classes as weekly repeating events with holidays skipped. The CSV lists every meeting as its own event, which is useful for spreadsheets or apps that don't read .ics.</li>
+        </ol>
+      </details>
+    </section>
+  </main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

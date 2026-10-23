@@ -1,0 +1,89 @@
+/*
+ * Page layout: header toolbar plus a two-pane split.
+ * Phones stack the panes (inputs on top, calendar below);
+ * desktops put them side by side with the calendar pane sticky.
+ */
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.brand h1 {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.brand small {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pane {
+  min-width: 0;
+  padding-block: 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.pane--inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pane--calendar {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 960px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .pane--inputs {
+    padding-right: 24px;
+  }
+
+  .pane--calendar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-left: 24px;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+}

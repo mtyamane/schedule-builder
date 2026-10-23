@@ -1,0 +1,78 @@
+/* Term settings card: holiday controls and list. */
+
+.auto-holidays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.auto-holidays select {
+  width: auto;
+}
+
+.holiday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holiday-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--sunk);
+}
+
+.holiday-list li.holiday-list__note {
+  padding-left: 0;
+  background: transparent;
+}
+
+.holiday-list__date {
+  min-width: 96px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.holiday-list__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.auto-tag {
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.holiday-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+@media (max-width: 460px) {
+  .holiday-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .holiday-form .btn {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
