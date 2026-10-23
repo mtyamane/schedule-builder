@@ -46,7 +46,7 @@
   };
 
   /** Regions with built-in holiday rules (see core/holidays.js). */
-  const REGIONS = ['US', 'CA', 'UK'];
+  const REGIONS = ['US', 'CA', 'JP'];
 
   /**
    * Curated font pairings for the calendar.

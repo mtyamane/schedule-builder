@@ -55,14 +55,14 @@
     return date;
   }
 
-  /** Canada/UK substitute rule: a weekend holiday moves to the following Monday. */
+  /** Canada substitute rule: a weekend holiday moves to the following Monday. */
   function observedNextWeekday(date) {
     if (date.getDay() === 6) return addDays(date, 2);
     if (date.getDay() === 0) return addDays(date, 1);
     return date;
   }
 
-  /** Christmas and Boxing Day with UK/Canada substitute days. */
+  /** Christmas and Boxing Day with Canadian substitute days. */
   function christmasAndBoxingDay(year) {
     const christmas = new Date(year, 11, 25);
     const day = (d) => new Date(year, 11, d);
@@ -76,6 +76,48 @@
       default:
         return [[christmas, 'Christmas Day'], [day(26), 'Boxing Day']];
     }
+  }
+
+  /**
+   * Japan's vernal and autumnal equinox days, from the standard
+   * approximation published by the National Astronomical Observatory
+   * (accurate for 1980–2099).
+   */
+  function japaneseEquinoxes(year) {
+    const t = year - 1980;
+    const leapCorrection = Math.floor(t / 4);
+    const vernal = Math.floor(20.8431 + 0.242194 * t - leapCorrection);
+    const autumnal = Math.floor(23.2488 + 0.242194 * t - leapCorrection);
+    return [new Date(year, 2, vernal), new Date(year, 8, autumnal)];
+  }
+
+  /**
+   * Add Japan's two derived holiday types to a list of national holidays:
+   * - Citizens' Holiday: a single day between two holidays is also a holiday.
+   * - Substitute Holiday: a holiday on a Sunday moves to the next non-holiday day.
+   * @param {[Date, string][]} holidays
+   * @returns {[Date, string][]}
+   */
+  function addJapaneseDerivedHolidays(holidays) {
+    const taken = new Set(holidays.map(([date]) => toIsoDate(date)));
+    const result = [...holidays];
+
+    for (const [date] of holidays) {
+      const between = addDays(date, 1);
+      if (!taken.has(toIsoDate(between)) && taken.has(toIsoDate(addDays(date, 2))) && between.getDay() !== 0) {
+        result.push([between, "Citizens' Holiday"]);
+        taken.add(toIsoDate(between));
+      }
+    }
+
+    for (const [date] of [...result].sort((a, b) => a[0] - b[0])) {
+      if (date.getDay() !== 0) continue;
+      let substitute = addDays(date, 1);
+      while (taken.has(toIsoDate(substitute))) substitute = addDays(substitute, 1);
+      result.push([substitute, 'Substitute Holiday']);
+      taken.add(toIsoDate(substitute));
+    }
+    return result;
   }
 
   /** Each rule returns [Date, label] pairs for one calendar year. */
@@ -114,17 +156,26 @@
       ];
     },
 
-    UK(year) {
-      const easter = easterSunday(year);
-      return [
-        [observedNextWeekday(new Date(year, 0, 1)), "New Year's Day"],
-        [addDays(easter, -2), 'Good Friday'],
-        [addDays(easter, 1), 'Easter Monday'],
-        [nthWeekday(year, 4, 1, 1), 'Early May bank holiday'],
-        [nthWeekday(year, 4, 1, -1), 'Spring bank holiday'],
-        [nthWeekday(year, 7, 1, -1), 'Summer bank holiday'],
-        ...christmasAndBoxingDay(year),
-      ];
+    JP(year) {
+      const [vernalEquinox, autumnalEquinox] = japaneseEquinoxes(year);
+      return addJapaneseDerivedHolidays([
+        [new Date(year, 0, 1), "New Year's Day"],
+        [nthWeekday(year, 0, 1, 2), 'Coming of Age Day'],
+        [new Date(year, 1, 11), 'National Foundation Day'],
+        [new Date(year, 1, 23), "Emperor's Birthday"],
+        [vernalEquinox, 'Vernal Equinox Day'],
+        [new Date(year, 3, 29), 'Showa Day'],
+        [new Date(year, 4, 3), 'Constitution Memorial Day'],
+        [new Date(year, 4, 4), 'Greenery Day'],
+        [new Date(year, 4, 5), "Children's Day"],
+        [nthWeekday(year, 6, 1, 3), 'Marine Day'],
+        [new Date(year, 7, 11), 'Mountain Day'],
+        [nthWeekday(year, 8, 1, 3), 'Respect for the Aged Day'],
+        [autumnalEquinox, 'Autumnal Equinox Day'],
+        [nthWeekday(year, 9, 1, 2), 'Sports Day'],
+        [new Date(year, 10, 3), 'Culture Day'],
+        [new Date(year, 10, 23), 'Labor Thanksgiving Day'],
+      ]);
     },
   };
 
@@ -141,5 +192,5 @@
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  TSB.holidays = Object.freeze({ easterSunday, nthWeekday, holidaysForRegion });
+  TSB.holidays = Object.freeze({ easterSunday, nthWeekday, japaneseEquinoxes, holidaysForRegion });
 })(globalThis.TSB = globalThis.TSB || {});

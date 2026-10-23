@@ -101,7 +101,7 @@
    */
   function regionForTimeZone(timeZone) {
     const zone = String(timeZone || '');
-    if (/^Europe\/(London|Belfast)$/.test(zone)) return 'UK';
+    if (zone === 'Asia/Tokyo' || zone === 'Japan') return 'JP';
     const canadianZones = /^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Halifax|St_Johns|Regina|Montreal|Moncton|Whitehorse|Yellowknife|Iqaluit)$/;
     if (canadianZones.test(zone) || zone.startsWith('Canada/')) return 'CA';
     return 'US';

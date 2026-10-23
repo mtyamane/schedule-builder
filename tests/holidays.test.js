@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const TSB = require('./helpers/load-app');
 
-const { easterSunday, nthWeekday, holidaysForRegion } = TSB.holidays;
+const { easterSunday, nthWeekday, japaneseEquinoxes, holidaysForRegion } = TSB.holidays;
 const { toIsoDate } = TSB.dates;
 
 const datesOf = (region, year) => Object.fromEntries(holidaysForRegion(region, year).map((h) => [h.label, h.date]));
@@ -40,11 +40,31 @@ test('Canadian holidays for 2027', () => {
   assert.equal(ca['Boxing Day (observed)'], '2027-12-28');
 });
 
-test('UK bank holidays for 2027', () => {
-  const uk = datesOf('UK', 2027);
-  assert.equal(uk['Easter Monday'], '2027-03-29');
-  assert.equal(uk['Early May bank holiday'], '2027-05-03');
-  assert.equal(uk['Summer bank holiday'], '2027-08-30');
+test('Japanese holidays for 2026, including Golden Week and Silver Week', () => {
+  const jp = holidaysForRegion('JP', 2026);
+  const on = (date) => jp.filter((h) => h.date === date).map((h) => h.label);
+  assert.deepEqual(on('2026-01-12'), ['Coming of Age Day']);
+  assert.deepEqual(on('2026-03-20'), ['Vernal Equinox Day']);
+  assert.deepEqual(on('2026-05-06'), ['Substitute Holiday']); // Constitution Day is a Sunday; May 4–5 are taken
+  assert.deepEqual(on('2026-09-21'), ['Respect for the Aged Day']);
+  assert.deepEqual(on('2026-09-22'), ["Citizens' Holiday"]); // between Sep 21 and the Sep 23 equinox
+  assert.deepEqual(on('2026-09-23'), ['Autumnal Equinox Day']);
+  assert.equal(jp.length, 18); // 16 fixed holidays + 1 substitute + 1 citizens' holiday
+});
+
+test('Japanese substitute holiday follows a Sunday holiday', () => {
+  const jp = Object.fromEntries(holidaysForRegion('JP', 2027).map((h) => [h.date, h.label]));
+  assert.equal(jp['2027-02-11'], 'National Foundation Day'); // Thursday, no substitute
+  assert.equal(jp['2027-03-21'], 'Vernal Equinox Day'); // Sunday
+  assert.equal(jp['2027-03-22'], 'Substitute Holiday');
+  assert.equal(jp['2027-10-11'], 'Sports Day');
+});
+
+test('Japanese equinox formula matches published dates', () => {
+  const iso = (dates) => dates.map(toIsoDate);
+  assert.deepEqual(iso(japaneseEquinoxes(2024)), ['2024-03-20', '2024-09-22']);
+  assert.deepEqual(iso(japaneseEquinoxes(2025)), ['2025-03-20', '2025-09-23']);
+  assert.deepEqual(iso(japaneseEquinoxes(2027)), ['2027-03-21', '2027-09-23']);
 });
 
 test('holidays are sorted and unknown regions return nothing', () => {

@@ -5,7 +5,7 @@ A single-page tool for planning a quarter or semester class schedule and getting
 - Add classes with a course code, name, instructor, room and color, plus optional lab, seminar, discussion or studio sections
 - Optional final exam for each class
 - Three calendar views: **First week** (blocks out days before classes start and holidays), **Regular week**, and **Finals week**
-- Common holidays added automatically for the United States, Canada, or the United Kingdom, plus manual holidays
+- Common holidays added automatically for the United States, Canada, or Japan, plus manual holidays
 - Export to **iCalendar (.ics)** with weekly repeating events and holidays skipped, or **CSV** in Google Calendar's import format
 - Download any view as a **PNG** or a letter-size **PDF**, or print it
 - Personalize the calendar's font, text sizes, block details, layout and colors
@@ -40,7 +40,7 @@ js/
   core/                 Pure logic, no DOM access (unit tested)
     constants.js        Day names, colors, meeting types, fonts, size presets
     dates.js            Date/time parsing and formatting
-    holidays.js         Holiday rules for US, Canada and UK
+    holidays.js         Holiday rules for US, Canada and Japan
     color.js            Color math for course colors
     schedule.js         Data model: types, factories, validation, saved-file import
     week-view.js        Builds the data for one calendar view
@@ -89,4 +89,4 @@ Times are exported in your device's time zone.
 
 ## Holiday notes
 
-Automatic holidays cover common national holidays between the first day of classes and the end of finals week. Schools differ, so remove any your school doesn't observe and add breaks such as spring break manually. Canadian provincial holidays vary; Family Day and the Civic Holiday are labeled "most provinces." The US list leaves out Columbus Day / Indigenous Peoples' Day because most schools hold classes then.
+Automatic holidays cover common national holidays between the first day of classes and the end of finals week. Schools differ, so remove any your school doesn't observe and add breaks such as spring break manually. Canadian provincial holidays vary; Family Day and the Civic Holiday are labeled "most provinces." The Japan list includes substitute holidays (when a holiday falls on a Sunday) and citizens' holidays (a day between two holidays); equinox dates use the National Astronomical Observatory's standard formula. The US list leaves out Columbus Day / Indigenous Peoples' Day because most schools hold classes then.

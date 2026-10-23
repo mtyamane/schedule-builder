@@ -91,5 +91,6 @@ test('saved files round-trip through normalizeSchedule', () => {
 test('regionForTimeZone maps common zones', () => {
   assert.equal(model.regionForTimeZone('America/Los_Angeles'), 'US');
   assert.equal(model.regionForTimeZone('America/Toronto'), 'CA');
-  assert.equal(model.regionForTimeZone('Europe/London'), 'UK');
+  assert.equal(model.regionForTimeZone('Asia/Tokyo'), 'JP');
+  assert.equal(model.regionForTimeZone('Europe/London'), 'US');
 });
