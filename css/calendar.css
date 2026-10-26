@@ -13,7 +13,7 @@
 }
 
 .calendar-heading h2 {
-  font-family: var(--cal-font-title, var(--f-display));
+  font-family: var(--cal-font-title, var(--font));
   font-size: calc(clamp(24px, 3.2vw, 34px) * var(--scale-title, 1));
   font-weight: var(--cal-weight-title, 800);
   line-height: 1.1;
@@ -27,7 +27,7 @@
 
 .calendar-heading p {
   margin: 0;
-  font-family: var(--cal-font-body, var(--f-body));
+  font-family: var(--cal-font-body, var(--font));
   font-size: calc(14px * (0.5 + 0.5 * var(--scale-title, 1)));
   color: var(--muted);
 }
@@ -76,7 +76,7 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  font-family: var(--cal-font-body, var(--f-body));
+  font-family: var(--cal-font-body, var(--font));
 }
 
 .calendar {
@@ -107,13 +107,13 @@
 }
 
 .calendar__day-label b {
-  font-family: var(--cal-font-title, var(--f-display));
+  font-family: var(--cal-font-title, var(--font));
   font-size: calc(14px * var(--scale-day, 1));
   font-weight: var(--cal-weight-title, 700);
 }
 
 .calendar__day-label span {
-  font-family: var(--cal-font-code, var(--f-mono));
+  font-family: var(--cal-font-code, var(--font));
   font-size: calc(11px * var(--scale-day, 1));
   color: var(--muted);
 }
@@ -137,7 +137,7 @@
   position: absolute;
   right: 8px;
   transform: translateY(-50%);
-  font-family: var(--cal-font-code, var(--f-mono));
+  font-family: var(--cal-font-code, var(--font));
   font-size: calc(10.5px * var(--scale-time, 1));
   color: var(--muted);
   white-space: nowrap;
@@ -198,7 +198,7 @@
 
 .event b {
   overflow: hidden;
-  font-family: var(--cal-font-code, var(--f-mono));
+  font-family: var(--cal-font-code, var(--font));
   font-size: calc(11.5px * var(--scale-block, 1));
   font-weight: var(--cal-weight-code, 500);
   text-overflow: ellipsis;

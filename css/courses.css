@@ -46,13 +46,12 @@
 }
 
 .course-card__title h3 {
-  font-family: var(--f-body);
   font-size: 15px;
   font-weight: 600;
 }
 
 .course-card__title h3 b {
-  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
 
@@ -97,7 +96,7 @@
   border-radius: 4px;
   background: color-mix(in srgb, var(--course-color) 18%, var(--surface));
   color: color-mix(in srgb, var(--course-color) 60%, var(--ink));
-  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.06em;

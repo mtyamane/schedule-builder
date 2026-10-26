@@ -60,7 +60,7 @@
   padding: 4px 9px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--muted);
@@ -157,7 +157,6 @@ select:focus {
 
 .input--large {
   padding: 8px 10px;
-  font-family: var(--f-display);
   font-size: 22px;
   font-weight: 700;
 }

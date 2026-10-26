@@ -77,7 +77,7 @@
   /** @returns {CalendarStyle} */
   function defaultStyle() {
     return {
-      font: 'classic',
+      font: 'clean',
       sizePreset: 'M',
       sizes: { title: 1, day: 1, block: 1, time: 1 },
       blockDetails: { name: false, time: true, room: true, instructor: false, type: true },
@@ -89,7 +89,10 @@
     };
   }
 
-  /** @returns {object} the font definition for an id, falling back to the first font */
+  /**
+   * @returns {object} the font definition for an id, falling back to the
+   * default font (this also covers the removed "classic" font in older files)
+   */
   function findFont(id) {
     return FONTS.find((font) => font.id === id) || FONTS[0];
   }

@@ -3,7 +3,7 @@
   'use strict';
 
   const { FONTS } = TSB.constants;
-  const { byId } = TSB.dom;
+  const { byId, SEPARATOR_HTML } = TSB.dom;
   const { loadAllFonts } = TSB.fonts;
   const store = TSB.store;
 
@@ -17,7 +17,7 @@
     return `
       <button type="button" class="font-option" data-font="${font.id}" aria-pressed="${isSelected}">
         <b style="font-family:'${font.title}',${font.fallback};font-weight:${font.titleWeight}">${font.label}</b>
-        <span style="font-family:'${font.body}',${font.fallback}">CSE 143 · ${sample}</span>
+        <span style="font-family:'${font.body}',${font.fallback}">CSE 143${SEPARATOR_HTML}${sample}</span>
       </button>`;
   }
 

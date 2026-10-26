@@ -73,6 +73,12 @@ test('normalizeSchedule accepts files from earlier versions', () => {
   assert.equal(schedule.style.sizes.title, 1); // out of range → default
 });
 
+test('normalizeStyle maps the removed "classic" font to the default Clean font', () => {
+  assert.equal(model.defaultStyle().font, 'clean');
+  assert.equal(model.normalizeStyle({ font: 'classic' }).font, 'clean');
+  assert.equal(model.normalizeStyle({ font: 'serif' }).font, 'serif');
+});
+
 test('normalizeSchedule rejects files that are not schedules', () => {
   assert.throws(() => model.normalizeSchedule({ hello: 'world' }), TypeError);
   assert.throws(() => model.normalizeSchedule(null), TypeError);

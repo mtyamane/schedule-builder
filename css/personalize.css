@@ -13,7 +13,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  font-family: var(--f-display);
   font-size: 15px;
   font-weight: 700;
   list-style: none;
@@ -26,7 +25,6 @@
 
 .personalize > summary::after {
   content: "+";
-  font-family: var(--f-mono);
   font-size: 18px;
   font-weight: 400;
   color: var(--muted);
@@ -123,9 +121,8 @@
 }
 
 .size-slider output {
-  font-family: var(--f-mono);
-  font-size: 12px;
   font-variant-numeric: tabular-nums;
+  font-size: 12px;
   text-align: right;
   color: var(--muted);
 }

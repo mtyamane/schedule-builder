@@ -28,7 +28,7 @@ npm test
 ```
 index.html              Page markup; loads the stylesheets and scripts
 css/
-  tokens.css            Colors, fonts and sizes (light and dark mode)
+  tokens.css            Colors, the site font (DM Sans) and sizes, light and dark mode
   base.css              Element defaults and small utility classes
   layout.css            Header and the two-pane split
   components.css        Buttons, fields, segmented controls, modal, toast
@@ -38,7 +38,7 @@ css/
   personalize.css       "Personalize calendar" panel
 js/
   core/                 Pure logic, no DOM access (unit tested)
-    constants.js        Day names, colors, meeting types, fonts, size presets
+    constants.js        Day names, colors, meeting types, fonts, separator, size presets
     dates.js            Date/time parsing and formatting
     holidays.js         Holiday rules for US, Canada and Japan
     color.js            Color math for course colors

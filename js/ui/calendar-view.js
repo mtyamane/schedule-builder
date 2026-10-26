@@ -7,7 +7,7 @@
   const { readableTextColor } = TSB.color;
   const { buildWeekView } = TSB.weekView;
   const { eventTag, eventDetailLines } = TSB.eventText;
-  const { byId, escapeHtml } = TSB.dom;
+  const { byId, escapeHtml, joinWithSeparators } = TSB.dom;
   const { ensureFontLoaded, fontStack } = TSB.fonts;
   const model = TSB.schedule;
   const store = TSB.store;
@@ -113,7 +113,7 @@
     });
 
     const view = buildWeekView(schedule, viewKey, store.displayedCourses());
-    byId('calendar-note').textContent = (view.rangeLabel ? `${view.rangeLabel} · ` : '') + view.note;
+    byId('calendar-note').innerHTML = joinWithSeparators([view.rangeLabel, view.note]);
     byId('calendar').innerHTML = calendarHtml(view, schedule.style);
   }
 

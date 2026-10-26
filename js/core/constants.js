@@ -49,13 +49,13 @@
   const REGIONS = ['US', 'CA', 'JP'];
 
   /**
-   * Curated font pairings for the calendar.
+   * Curated font pairings for the calendar. The first is the default and
+   * matches the rest of the site.
    * `googleQuery` is the family part of a Google Fonts css2 URL; null means
    * the font is already loaded by index.html.
    */
   const FONTS = [
-    { id: 'classic', label: 'Classic', title: 'Bricolage Grotesque', titleWeight: 800, body: 'IBM Plex Sans', code: 'IBM Plex Mono', codeWeight: 500, fallback: 'sans-serif', googleQuery: null },
-    { id: 'clean', label: 'Clean', title: 'DM Sans', titleWeight: 700, body: 'DM Sans', code: 'DM Sans', codeWeight: 700, fallback: 'sans-serif', googleQuery: 'DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700' },
+    { id: 'clean', label: 'Clean', title: 'DM Sans', titleWeight: 700, body: 'DM Sans', code: 'DM Sans', codeWeight: 700, fallback: 'sans-serif', googleQuery: null },
     { id: 'rounded', label: 'Rounded', title: 'Nunito', titleWeight: 800, body: 'Nunito', code: 'Nunito', codeWeight: 800, fallback: 'sans-serif', googleQuery: 'Nunito:wght@400;600;800' },
     { id: 'serif', label: 'Serif', title: 'Fraunces', titleWeight: 600, body: 'Source Serif 4', code: 'Source Serif 4', codeWeight: 600, fallback: 'Georgia, serif', googleQuery: 'Fraunces:opsz,wght@9..144,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600' },
     { id: 'hand', label: 'Handwritten', title: 'Caveat', titleWeight: 700, body: 'Patrick Hand', code: 'Patrick Hand', codeWeight: 400, fallback: 'cursive', googleQuery: 'Caveat:wght@700&family=Patrick+Hand' },
@@ -63,6 +63,9 @@
     { id: 'condensed', label: 'Condensed', title: 'Barlow Condensed', titleWeight: 700, body: 'Barlow Semi Condensed', code: 'Barlow Semi Condensed', codeWeight: 600, fallback: 'sans-serif', googleQuery: 'Barlow+Condensed:wght@700&family=Barlow+Semi+Condensed:wght@400;600' },
     { id: 'readable', label: 'Readable', title: 'Lexend', titleWeight: 700, body: 'Lexend', code: 'Lexend', codeWeight: 500, fallback: 'sans-serif', googleQuery: 'Lexend:wght@400;500;700' },
   ];
+
+  /** Separator between items in plain text, such as select options and image text. */
+  const SEPARATOR = ' | ';
 
   /** Overall text size multipliers. */
   const SIZE_PRESETS = { S: 0.85, M: 1, L: 1.15, XL: 1.3 };
@@ -85,6 +88,7 @@
     VIEWS,
     REGIONS,
     FONTS,
+    SEPARATOR,
     SIZE_PRESETS,
     SIZE_RANGE,
     ROW_HEIGHTS,

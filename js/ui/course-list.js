@@ -8,9 +8,9 @@
 (function (TSB) {
   'use strict';
 
-  const { COURSE_COLORS, DAY_NAMES, DAY_LETTERS, WEEK_ORDER, MEETING_TYPES } = TSB.constants;
+  const { COURSE_COLORS, DAY_NAMES, DAY_LETTERS, WEEK_ORDER, MEETING_TYPES, SEPARATOR } = TSB.constants;
   const { parseDate, parseTime, formatDate, formatDays, formatTimeRange } = TSB.dates;
-  const { byId, escapeHtml, showToast } = TSB.dom;
+  const { byId, escapeHtml, joinWithSeparators, SEPARATOR_HTML, showToast } = TSB.dom;
   const model = TSB.schedule;
   const store = TSB.store;
 
@@ -22,15 +22,15 @@
   function meetingSummaryHtml(course, meeting, clock) {
     const tag = model.hasMultipleMeetings(course) ? `<span class="type-tag">${escapeHtml(meeting.type)}</span>` : '';
     const time = model.isValidMeeting(meeting) ? formatTimeRange(parseTime(meeting.start), parseTime(meeting.end), clock) : '';
-    const room = meeting.location ? `<span>· ${escapeHtml(meeting.location)}</span>` : '';
-    return `<li>${tag}<span class="mono">${escapeHtml(formatDays(meeting.days))} ${escapeHtml(time)}</span>${room}</li>`;
+    const room = meeting.location ? `${SEPARATOR_HTML}${escapeHtml(meeting.location)}` : '';
+    return `<li>${tag}<span><span class="tabular">${escapeHtml(formatDays(meeting.days))} ${escapeHtml(time)}</span>${room}</span></li>`;
   }
 
   function finalSummaryHtml(course, clock) {
     if (!model.hasValidFinal(course)) return '';
     const { date, start, end, location } = course.final;
-    return `<p class="course-card__final">Final · ${escapeHtml(formatDate(parseDate(date)))} ·
-      <span class="mono">${escapeHtml(formatTimeRange(parseTime(start), parseTime(end), clock))}</span>${location ? ` · ${escapeHtml(location)}` : ''}</p>`;
+    const parts = ['Final', formatDate(parseDate(date)), formatTimeRange(parseTime(start), parseTime(end), clock), location];
+    return `<p class="course-card__final tabular">${joinWithSeparators(parts)}</p>`;
   }
 
   function courseCardHtml(course) {
@@ -62,7 +62,7 @@
   function meetingEditorHtml(meeting, index) {
     const id = escapeHtml(meeting.id);
     const typeOptions = MEETING_TYPES
-      .map((t) => `<option value="${t.code}" ${meeting.type === t.code ? 'selected' : ''}>${t.code} · ${t.label}</option>`)
+      .map((t) => `<option value="${t.code}" ${meeting.type === t.code ? 'selected' : ''}>${t.code}${SEPARATOR}${t.label}</option>`)
       .join('');
     const dayButtons = WEEK_ORDER
       .map((day) => `<button type="button" class="day-toggle" data-day="${day}" data-meeting="${id}" aria-pressed="${meeting.days.includes(day)}" aria-label="${DAY_NAMES[day]}">${DAY_LETTERS[day]}</button>`)
@@ -137,7 +137,7 @@
 
     const count = schedule.courses.length;
     const hours = +(model.weeklyClassMinutes(schedule.courses) / 60).toFixed(2);
-    byId('course-summary').textContent = count ? `${count} class${count === 1 ? '' : 'es'} · ${hours} h in class / week` : '';
+    byId('course-summary').innerHTML = count ? joinWithSeparators([`${count} class${count === 1 ? '' : 'es'}`, `${hours} h in class / week`]) : '';
   }
 
   /* ---------- editing ---------- */

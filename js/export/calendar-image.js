@@ -5,7 +5,7 @@
 (function (TSB) {
   'use strict';
 
-  const { DAY_NAMES, VIEWS, SIZE_PRESETS } = TSB.constants;
+  const { DAY_NAMES, VIEWS, SIZE_PRESETS, SEPARATOR } = TSB.constants;
   const { formatHour, formatMonthDay } = TSB.dates;
   const { hexToRgb, mixRgb, rgbToCss, readableTextColor } = TSB.color;
   const { buildWeekView } = TSB.weekView;
@@ -107,6 +107,16 @@
     return y + 34;
   }
 
+  /** Legend text parts for a course, e.g. ["CSE 143 Computer Programming II", "Prof. Lin"]. */
+  function legendParts(course) {
+    return [`${course.code}${course.name ? ` ${course.name}` : ''}`, course.instructor].filter(Boolean);
+  }
+
+  /** Width of legend parts joined by separators, using the context's current font. */
+  function legendTextWidth(ctx, parts) {
+    return ctx.measureText(parts.join(SEPARATOR)).width;
+  }
+
   /** Lay out the course legend in rows across the bottom. */
   function layoutLegend(ctx, d) {
     const courses = [...new Map(d.view.events.map((e) => [e.course.id, e.course])).values()];
@@ -115,13 +125,13 @@
     let x = MARGIN;
     let row = 0;
     for (const course of courses) {
-      const text = `${course.code}${course.name ? ` ${course.name}` : ''}${course.instructor ? ` · ${course.instructor}` : ''}`;
-      const width = 36 + ctx.measureText(text).width + 40;
+      const parts = legendParts(course);
+      const width = 36 + legendTextWidth(ctx, parts) + 40;
       if (x + width > WIDTH - MARGIN && x > MARGIN) {
         row++;
         x = MARGIN;
       }
-      items.push({ course, text, x, row });
+      items.push({ course, parts, x, row });
       x += width;
     }
     const height = items.length ? (row + 1) * 40 + 40 : 0;
@@ -277,10 +287,21 @@
       ctx.fillStyle = item.course.color;
       roundedRect(ctx, item.x, y - 20, 24, 24, d.radius ? 5 : 0);
       ctx.fill();
-      ctx.fillStyle = d.palette.ink;
       ctx.textAlign = 'left';
       ctx.font = `400 24px ${d.fonts.body}`;
-      ctx.fillText(item.text, item.x + 36, y);
+
+      // Draw each part in ink and the separators in the muted color.
+      let x = item.x + 36;
+      item.parts.forEach((part, index) => {
+        if (index > 0) {
+          ctx.fillStyle = d.palette.muted;
+          ctx.fillText(SEPARATOR, x, y);
+          x += ctx.measureText(SEPARATOR).width;
+        }
+        ctx.fillStyle = d.palette.ink;
+        ctx.fillText(part, x, y);
+        x += ctx.measureText(part).width;
+      });
     }
   }
 

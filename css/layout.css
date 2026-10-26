@@ -30,7 +30,7 @@
 }
 
 .brand small {
-  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   color: var(--muted);
   letter-spacing: 0.06em;

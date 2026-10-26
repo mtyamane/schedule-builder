@@ -26,10 +26,8 @@
   --ok: #227a4a;
   --danger: #b3261e;
 
-  /* Type */
-  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Type: one typeface for the whole site (matches the calendar's "Clean" font). */
+  --font: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
 
   /* Shape */
   --radius: 10px;

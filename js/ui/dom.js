@@ -12,6 +12,18 @@
     return String(value ?? '').replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
   }
 
+  /** Markup for the muted pipe separator (styled by .sep in base.css). */
+  const SEPARATOR_HTML = '<span class="sep">|</span>';
+
+  /**
+   * Join items with the muted pipe separator. Items are escaped.
+   * @param {string[]} items
+   * @returns {string} HTML
+   */
+  function joinWithSeparators(items) {
+    return items.filter(Boolean).map(escapeHtml).join(SEPARATOR_HTML);
+  }
+
   let toastTimer = null;
 
   /** Show a short message at the bottom of the screen. */
@@ -105,5 +117,5 @@
     image.src = imageUrl;
   }
 
-  TSB.dom = Object.freeze({ byId, escapeHtml, showToast, showModal, downloadFile, printImage });
+  TSB.dom = Object.freeze({ byId, escapeHtml, SEPARATOR_HTML, joinWithSeparators, showToast, showModal, downloadFile, printImage });
 })(globalThis.TSB = globalThis.TSB || {});
