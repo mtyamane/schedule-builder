@@ -7,7 +7,7 @@ const { oneCourseSchedule } = require('./helpers/fixtures');
 
 const { buildIcs, escapeText, foldLine } = TSB.ics;
 const { buildGoogleCsv } = TSB.csv;
-const { buildImagePdf } = TSB.pdf;
+const { buildImagePdf, buildPdf } = TSB.pdf;
 
 const NOW = new Date(Date.UTC(2026, 9, 23, 12, 0, 0));
 const ics = (schedule) => buildIcs(schedule, { timeZone: 'America/Los_Angeles', now: NOW });
@@ -83,4 +83,21 @@ test('pdf has a valid header, trailer and cross-reference offsets', () => {
 
   const startxref = Number(text.match(/startxref\n(\d+)/)[1]);
   assert.ok(text.startsWith('xref', startxref));
+});
+
+test('pdf can hold several pages, each with its own size', () => {
+  const fakeJpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const pdf = buildPdf([
+    { jpeg: fakeJpeg, width: 2200, height: 1700, pageWidth: 792, pageHeight: 612, margin: 0 },
+    { jpeg: fakeJpeg, width: 2200, height: 1700, pageWidth: 792, pageHeight: 612, margin: 0 },
+    { jpeg: fakeJpeg, width: 1653, height: 2339, pageWidth: 595, pageHeight: 842, margin: 0 },
+  ]);
+  const text = Buffer.from(pdf).toString('latin1');
+  assert.match(text, /\/Count 3/);
+  assert.equal((text.match(/\/Type \/Page /g) || []).length, 3);
+  assert.match(text, /\/MediaBox \[0 0 595 842\]/);
+
+  const offsets = [...text.matchAll(/^(\d{10}) 00000 n $/gm)].map((m) => Number(m[1]));
+  assert.equal(offsets.length, 11);
+  offsets.forEach((offset, i) => assert.ok(text.startsWith(`${i + 1} 0 obj`, offset), `object ${i + 1} offset`));
 });

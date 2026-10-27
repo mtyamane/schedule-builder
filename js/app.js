@@ -4,11 +4,12 @@
 (function (TSB) {
   'use strict';
 
+  TSB.navigation.init();
   TSB.termForm.init();
   TSB.holidaysPanel.init();
   TSB.courseList.init();
   TSB.calendarView.init();
-  TSB.personalizePanel.init();
+  TSB.stylePanel.init();
   TSB.toolbar.init();
 
   TSB.store.emitAll();

@@ -35,13 +35,29 @@
     return `<p class="course-card__final tabular">${joinWithSeparators(parts)}</p>`;
   }
 
-  function courseCardHtml(course) {
+  const WARNING_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8 15 14H1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.2v3.6M8 11.6v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  /** Describe one overlap from the point of view of `course`. */
+  function overlapText(overlap, course, clock) {
+    const other = overlap.first.course === course ? overlap.second : overlap.first;
+    const otherName = other.course === course
+      ? `its own ${other.type}`
+      : `${other.course.code}${model.hasMultipleMeetings(other.course) && !overlap.isFinal ? ` ${other.type}` : ''}`;
+    const when = overlap.isFinal ? formatDate(parseDate(overlap.date)) : DAY_NAMES[overlap.day];
+    const what = overlap.isFinal ? `Final overlaps the ${otherName} final` : `Overlaps ${otherName}`;
+    return `${what} on ${when}, ${formatTimeRange(overlap.start, overlap.end, clock)}`;
+  }
+
+  function overlapWarningsHtml(course, overlaps, clock) {
+    const mine = overlaps.filter((o) => o.first.course === course || o.second.course === course);
+    if (!mine.length) return '';
+    return `<ul class="course-card__warnings">${mine.map((o) => `<li>${WARNING_ICON}<span>${escapeHtml(overlapText(o, course, clock))}</span></li>`).join('')}</ul>`;
+  }
+
+  function courseCardHtml(course, overlaps) {
     const { clock } = store.state.schedule.style;
     const id = escapeHtml(course.id);
-    const actions = store.state.pendingDeleteId === course.id
-      ? `<button class="btn btn--small btn--danger" data-action="confirm-delete" data-id="${id}">Confirm remove</button>
-         <button class="btn btn--ghost btn--small" data-action="cancel-delete">Keep</button>`
-      : `<button class="btn btn--ghost btn--small" data-action="edit" data-id="${id}">Edit</button>
+    const actions = `<button class="btn btn--ghost btn--small" data-action="edit" data-id="${id}">Edit</button>
          <button class="btn btn--ghost btn--small" data-action="delete" data-id="${id}">Remove</button>`;
 
     return `
@@ -56,6 +72,7 @@
         </div>
         <ul class="course-card__meetings">${course.meetings.map((m) => meetingSummaryHtml(course, m, clock)).join('')}</ul>
         ${finalSummaryHtml(course, clock)}
+        ${overlapWarningsHtml(course, overlaps, clock)}
       </article>`;
   }
 
@@ -130,7 +147,8 @@
 
   function render() {
     const { schedule, draft, editingId } = store.state;
-    const parts = schedule.courses.map((course) => (course.id === editingId ? editorHtml(draft, false) : courseCardHtml(course)));
+    const overlaps = model.findOverlaps(schedule.courses);
+    const parts = schedule.courses.map((course) => (course.id === editingId ? editorHtml(draft, false) : courseCardHtml(course, overlaps)));
     if (editingId === 'new') parts.push(editorHtml(draft, true));
     if (!parts.length) parts.push('<div class="course-list__empty">No classes yet. Add your first class and it will appear on the calendar.</div>');
 
@@ -153,7 +171,6 @@
   /** @param {string} courseId course id, or 'new' */
   function startEditing(courseId) {
     const { state } = store;
-    state.pendingDeleteId = null;
     if (courseId === 'new') {
       state.draft = {
         id: model.createId(), code: '', name: '', instructor: '', color: nextUnusedColor(),
@@ -169,7 +186,7 @@
 
     const codeInput = list().querySelector('[data-field="code"]');
     codeInput.focus({ preventScroll: true });
-    byId('course-editor').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    byId('course-editor').scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   function stopEditing() {
@@ -276,19 +293,14 @@
       case 'edit':
         startEditing(id);
         break;
-      case 'delete':
-        state.pendingDeleteId = id;
-        store.emit('courses');
-        break;
-      case 'cancel-delete':
-        state.pendingDeleteId = null;
-        store.emit('courses');
-        break;
-      case 'confirm-delete':
+      case 'delete': {
+        // Removing is immediate; the toast offers Undo instead of asking first.
+        const removed = state.schedule.courses.find((c) => c.id === id);
         state.schedule.courses = state.schedule.courses.filter((c) => c.id !== id);
-        state.pendingDeleteId = null;
         store.markChanged('courses', 'holidays', 'calendar');
+        showToast(`Removed ${removed.code}`, { label: 'Undo', onClick: store.undo });
         break;
+      }
       default:
         break;
     }
@@ -305,5 +317,5 @@
     store.subscribe('courses', render);
   }
 
-  TSB.courseList = Object.freeze({ init });
+  TSB.courseList = Object.freeze({ init, startEditing });
 })(globalThis.TSB = globalThis.TSB || {});

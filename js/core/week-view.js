@@ -30,6 +30,7 @@
    * @property {boolean} isPreview
    * @property {number} lane          column within overlapping events
    * @property {number} laneCount
+   * @property {boolean} overlaps     true when another event shares some of this time
    *
    * @typedef {Object} WeekView
    * @property {DayColumn[]} days
@@ -203,6 +204,13 @@
     }
   }
 
+  /** Set `overlaps` on events that share time with another event on the same day. */
+  function markOverlaps(dayEvents) {
+    for (const event of dayEvents) {
+      event.overlaps = dayEvents.some((other) => other !== event && event.start < other.end && other.start < event.end);
+    }
+  }
+
   const BUILDERS = { weekly: buildRegularWeek, week1: buildFirstWeek, finals: buildFinalsWeek };
 
   /**
@@ -256,7 +264,9 @@
     const days = built.days.filter((d) => shown.has(d.dayOfWeek));
     const events = built.events.filter((e) => shown.has(e.dayOfWeek));
     for (const day of days) {
-      assignLanes(events.filter((e) => e.dayOfWeek === day.dayOfWeek));
+      const dayEvents = events.filter((e) => e.dayOfWeek === day.dayOfWeek);
+      assignLanes(dayEvents);
+      markOverlaps(dayEvents);
     }
 
     let note = built.note;

@@ -53,7 +53,8 @@
 
 .page-frame {
   width: 100%;
-  min-width: 600px;
+  min-width: 560px;
+  max-width: 1100px;
   margin-inline: auto;
 }
 
@@ -74,19 +75,20 @@
   white-space: pre;
 }
 
-.page-event:hover > g {
-  filter: brightness(0.97);
+.page-event--editable {
+  cursor: pointer;
+  outline: none;
 }
 
-/* Image actions under the calendar */
-.calendar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-top: 14px;
+.page-event--editable:hover > g,
+.page-event--editable:focus-visible > g {
+  filter: brightness(0.94);
 }
 
-.calendar-actions .hint {
-  flex-basis: 100%;
+.page-event--editable:focus-visible > g {
+  filter: brightness(0.94) drop-shadow(0 0 1.5px var(--accent));
+}
+
+.preview-hint {
+  margin-top: 10px;
 }

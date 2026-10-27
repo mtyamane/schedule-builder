@@ -283,6 +283,58 @@
     return course.meetings.length > 1;
   }
 
+  /**
+   * @typedef {Object} Overlap  Two classes scheduled at the same time.
+   * @property {{course: Course, type: string}} first
+   * @property {{course: Course, type: string}} second
+   * @property {boolean} isFinal  true for two finals on the same date
+   * @property {number} [day]     day of week, for weekly meetings
+   * @property {string} [date]    "YYYY-MM-DD", for finals
+   * @property {number} start     minutes after midnight when the overlap begins
+   * @property {number} end       when it ends
+   */
+
+  /**
+   * Find classes that meet at the same time: weekly meetings on a shared day,
+   * and finals on a shared date. Back-to-back classes don't count.
+   * @param {Course[]} courses
+   * @returns {Overlap[]}
+   */
+  function findOverlaps(courses) {
+    const slots = [];
+    for (const course of courses) {
+      for (const meeting of course.meetings) {
+        if (!isValidMeeting(meeting)) continue;
+        for (const day of meeting.days) {
+          slots.push({ course, type: meeting.type, key: `day-${day}`, day, start: parseTime(meeting.start), end: parseTime(meeting.end), isFinal: false });
+        }
+      }
+      if (hasValidFinal(course)) {
+        const { date, start, end } = course.final;
+        slots.push({ course, type: 'FINAL', key: `date-${date}`, date, start: parseTime(start), end: parseTime(end), isFinal: true });
+      }
+    }
+
+    const overlaps = [];
+    for (let i = 0; i < slots.length; i++) {
+      for (let j = i + 1; j < slots.length; j++) {
+        const a = slots[i];
+        const b = slots[j];
+        if (a.key !== b.key || a.start >= b.end || b.start >= a.end) continue;
+        overlaps.push({
+          first: { course: a.course, type: a.type },
+          second: { course: b.course, type: b.type },
+          isFinal: a.isFinal,
+          day: a.day,
+          date: a.date,
+          start: Math.max(a.start, b.start),
+          end: Math.min(a.end, b.end),
+        });
+      }
+    }
+    return overlaps;
+  }
+
   /** @param {Course[]} courses @returns {number} scheduled minutes per regular week */
   function weeklyClassMinutes(courses) {
     let total = 0;
@@ -499,6 +551,7 @@
     validateCourse,
     getExportProblem,
     hasMultipleMeetings,
+    findOverlaps,
     weeklyClassMinutes,
     finalsWeekStart,
     automaticHolidays,

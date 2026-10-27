@@ -31,7 +31,6 @@
 
   /* Shape */
   --radius: 10px;
-  --hour: 46px; /* height of one hour on the calendar; overridden by personalize settings */
 }
 
 @media (prefers-color-scheme: dark) {

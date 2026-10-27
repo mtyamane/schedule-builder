@@ -1,7 +1,8 @@
 /**
  * On-screen calendar: view tabs, the note above the page, and a live page
  * preview. The preview is an SVG drawn from the same page layout as the
- * PNG/PDF/print export, scaled to fit the pane.
+ * PNG/PDF/print export, scaled to fit the pane. On top of the export, the
+ * preview lets you click a class to edit it and outlines overlapping classes.
  */
 (function (TSB) {
   'use strict';
@@ -14,6 +15,7 @@
   const store = TSB.store;
 
   const VIEW_ORDER = ['week1', 'weekly', 'finals'];
+  const OVERLAP_COLOR = '#e8590c';
   const round = (n) => Math.round(n * 100) / 100;
 
   /* ---------- SVG from the display list ---------- */
@@ -43,8 +45,15 @@
         const id = `clip-${ids.next++}`;
         const { x, y, w, h, radius } = item.clip;
         defs.push(`<clipPath id="${id}"><rect x="${round(x)}" y="${round(y)}" width="${round(w)}" height="${round(h)}" rx="${round(radius)}"/></clipPath>`);
-        const title = item.tooltip ? `<title>${escapeHtml(item.tooltip)}</title>` : '';
-        return `<g class="page-event">${title}<g clip-path="url(#${id})">${item.items.map((child) => itemSvg(child, fontFamilies, defs, ids)).join('')}</g></g>`;
+        const tooltip = [item.tooltip, item.overlaps && 'Overlaps another class', !item.isPreview && 'Click to edit'].filter(Boolean).join('\n');
+        const content = `<g clip-path="url(#${id})">${item.items.map((child) => itemSvg(child, fontFamilies, defs, ids)).join('')}</g>`;
+        // Overlap outline: drawn just outside the block, on screen only.
+        const outline = item.overlaps
+          ? `<rect class="page-event__overlap" x="${round(x - 1.2)}" y="${round(y - 1.2)}" width="${round(w + 2.4)}" height="${round(h + 2.4)}" rx="${round(radius + 1.2)}" fill="none" stroke="${OVERLAP_COLOR}" stroke-width="1.3" stroke-dasharray="3 1.6"/>`
+          : '';
+        if (item.isPreview) return `<g class="page-event">${content}${outline}</g>`;
+        const label = `Edit ${item.tooltip.split('\n')[0]}`;
+        return `<g class="page-event page-event--editable" data-course-id="${escapeHtml(item.courseId)}" tabindex="0" role="button" aria-label="${escapeHtml(label)}"><title>${escapeHtml(tooltip)}</title>${content}${outline}</g>`;
       }
       default:
         return '';
@@ -78,7 +87,9 @@
     });
 
     const layout = buildPageLayout(schedule, viewKey, store.displayedCourses(), createTextMeasurer(font));
-    byId('calendar-note').innerHTML = joinWithSeparators([layout.view.rangeLabel, layout.view.note]);
+    const overlapCount = layout.view.events.filter((e) => e.overlaps).length;
+    const overlapNote = overlapCount ? `${overlapCount} overlapping class block${overlapCount === 1 ? ' is' : 's are'} outlined in orange.` : '';
+    byId('calendar-note').innerHTML = joinWithSeparators([layout.view.rangeLabel, layout.view.note, overlapNote]);
 
     const frame = byId('calendar');
     frame.dataset.orientation = schedule.style.page.orientation;
@@ -90,7 +101,26 @@
     render();
   }
 
+  /** Open a class in the editor, switching to the Schedule tab first. */
+  function editCourse(courseId) {
+    TSB.navigation.showSideTab('schedule');
+    TSB.courseList.startEditing(courseId);
+  }
+
   function init() {
+    const frame = byId('calendar');
+    frame.addEventListener('click', (event) => {
+      const block = event.target.closest('[data-course-id]');
+      if (block) editCourse(block.dataset.courseId);
+    });
+    frame.addEventListener('keydown', (event) => {
+      const block = event.target.closest('[data-course-id]');
+      if (block && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        editCourse(block.dataset.courseId);
+      }
+    });
+
     const tabs = document.querySelector('.view-tabs');
     tabs.addEventListener('click', (event) => {
       const tab = event.target.closest('.view-tab');

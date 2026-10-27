@@ -91,6 +91,33 @@
   color: var(--muted);
 }
 
+/* Overlap warnings under a class */
+.course-card__warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 6px 10px;
+  list-style: none;
+  border-radius: 6px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+.course-card__warnings li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.course-card__warnings svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
 .type-tag {
   padding: 1px 5px;
   border-radius: 4px;

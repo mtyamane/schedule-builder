@@ -110,6 +110,25 @@ test('normalizeStyle keeps valid new settings and rejects bad ones', () => {
   assert.equal(style.fontSizes.code, 9.5); // invalid → default
 });
 
+test('findOverlaps finds classes and finals that share time', () => {
+  const schedule = oneCourseSchedule();
+  const second = {
+    id: 'c2', code: 'MATH 126', name: '', instructor: '', color: '#0ca678',
+    meetings: [
+      { id: 'm2', type: 'LEC', days: [3], start: '10:00', end: '10:50', location: '' }, // overlaps Wed 9:30–10:20
+      { id: 'm3', type: 'LEC', days: [5], start: '10:20', end: '11:10', location: '' }, // back-to-back: not an overlap
+    ],
+    final: { date: '2027-03-15', start: '10:00', end: '11:00', location: '' }, // overlaps CSE 143's final
+  };
+  schedule.courses.push(second);
+  const overlaps = model.findOverlaps(schedule.courses);
+  assert.equal(overlaps.length, 2);
+  const weekly = overlaps.find((o) => !o.isFinal);
+  assert.deepEqual([weekly.day, weekly.start, weekly.end], [3, 600, 620]);
+  const finals = overlaps.find((o) => o.isFinal);
+  assert.deepEqual([finals.date, finals.start, finals.end], ['2027-03-15', 600, 620]);
+});
+
 test('normalizeSchedule rejects files that are not schedules', () => {
   assert.throws(() => model.normalizeSchedule({ hello: 'world' }), TypeError);
   assert.throws(() => model.normalizeSchedule(null), TypeError);

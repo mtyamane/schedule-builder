@@ -9,9 +9,13 @@ A single-page tool for planning a quarter or semester class schedule and getting
 - Export to **iCalendar (.ics)** with weekly repeating events and holidays skipped, or **CSV** in Google Calendar's import format
 - Download any view as a **PNG** or **PDF**, or print it. The on-screen calendar is a live preview of that page
 - Personalize the page: paper size (Letter or A4), orientation, margins, font, exact text sizes in points, block details, header and legend (top, bottom, left, right or off), hours and days shown, block style, grayscale and a colorblind-safe palette
-- **Save schedule** writes a .json file you can **Import** later to keep editing
+- Settings on the left (**Schedule** and **Style** tabs) with a live page preview on the right; on phones, a bottom tab bar switches between Schedule, Style and Preview
+- Click a class on the preview to edit it; overlapping classes are outlined on the preview and flagged in the class list
+- **Undo / redo** (Ctrl+Z / Ctrl+Shift+Z) for every change, including removing a class
+- **Export** menu: iCalendar, CSV, PNG, PDF or print of the current view, or one 3-page PDF with all three views
+- **Save** writes a .json file you can **Open** later to keep editing
 
-Nothing is stored on a server or in the browser. Use **Save schedule** to keep your work.
+Nothing is stored on a server or in the browser. Use **Save** to keep your work.
 
 ## Running locally
 
@@ -35,7 +39,7 @@ css/
   term.css              Term card and holiday list
   courses.css           Course cards and the course editor
   calendar.css          On-screen weekly calendar
-  personalize.css       "Personalize calendar" panel
+  style-panel.css       Style tab sections
 js/
   core/                 Pure logic, no DOM access (unit tested)
     constants.js        Day names, colors, meeting types, fonts, separator, size presets
@@ -47,21 +51,23 @@ js/
     event-text.js       Text shown inside calendar blocks
     page-theme.js       Page backgrounds and course block colors
     page-layout.js      Lays out a view as a printed page (shapes and text in points)
+    history.js          Undo/redo history of schedule snapshots
   export/
     ics.js              iCalendar export (unit tested)
     csv.js              Google Calendar CSV export (unit tested)
-    pdf.js              One-page image PDF writer (unit tested)
+    pdf.js              Image PDF writer, one image per page (unit tested)
     calendar-image.js   Draws a page layout on a canvas for PNG/PDF/print
   ui/                   DOM code, one module per part of the page
     dom.js              Lookups, escaping, toast, modal, downloads, printing
     fonts.js            Loads calendar fonts and measures text for the layout
-    store.js            App state and change notifications
+    store.js            App state, undo/redo and change notifications
+    navigation.js       Schedule/Style tabs and the phone tab bar
     term-form.js        Term title and dates
     holidays-panel.js   Automatic and manual holidays
     course-list.js      Course cards and the add/edit form
-    calendar-view.js    View tabs and the on-screen page preview (SVG)
-    personalize-panel.js Font, size, layout and color settings
-    toolbar.js          Exports, save/import, image downloads, status
+    calendar-view.js    View tabs, the page preview (SVG), click-to-edit
+    style-panel.js      Style tab: page, font, sizes, blocks, legend, hours, colors
+    toolbar.js          Undo/redo, Open/Save, Export menu, status
   app.js                Entry point: initializes every UI module
 tests/                  Node test runner tests for js/core and js/export
 .github/workflows/      Runs tests and deploys to GitHub Pages

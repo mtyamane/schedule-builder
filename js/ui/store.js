@@ -1,25 +1,28 @@
 /**
- * App state and a small publish/subscribe mechanism.
+ * App state, undo/redo history and a small publish/subscribe mechanism.
  *
  * UI modules read `store.state`, change it, then call `markChanged(...topics)`
- * (for saved data) or `emit(...topics)` (for view-only changes). Each module
- * subscribes to the topics it renders.
+ * (for saved data, which also records an undo step) or `emit(...topics)`
+ * (for view-only changes). Each module subscribes to the topics it renders.
  *
  * Topics:
- *   term      term fields (title, dates)
- *   holidays  holiday controls and list
- *   courses   course list and editor
- *   calendar  calendar view
- *   style     personalize panel controls
- *   status    "Not exported" chip
- *   banner    example-schedule banner
+ *   term        term fields (title, dates)
+ *   holidays    holiday controls and list
+ *   courses     course list and editor
+ *   calendar    calendar preview
+ *   style       Style tab controls
+ *   status      "Not exported" chip
+ *   banner      example-schedule banner
+ *   history     undo/redo buttons
+ *   navigation  Schedule/Style tabs and the phone tab bar
  */
 (function (TSB) {
   'use strict';
 
   const model = TSB.schedule;
+  const { createHistory } = TSB.history;
 
-  const ALL_TOPICS = ['term', 'holidays', 'courses', 'calendar', 'style', 'status', 'banner'];
+  const ALL_TOPICS = ['term', 'holidays', 'courses', 'calendar', 'style', 'status', 'banner', 'history', 'navigation'];
 
   const state = {
     /** @type {object} the Schedule being edited */
@@ -31,6 +34,10 @@
     hasExported: false,
     /** @type {'week1'|'weekly'|'finals'} */
     view: 'weekly',
+    /** @type {'schedule'|'style'} which tab the left pane shows */
+    sideTab: 'schedule',
+    /** @type {'schedule'|'style'|'preview'} which part phones show */
+    mobileTab: 'schedule',
     /**
      * Course being edited, plus editor-only fields:
      * `hasFinal` (checkbox) and `finalDraft` (kept while the box is unchecked).
@@ -38,9 +45,11 @@
     draft: null,
     /** @type {string|null} course id, 'new', or null when not editing */
     editingId: null,
-    /** @type {string|null} course id awaiting delete confirmation */
-    pendingDeleteId: null,
   };
+
+  const history = createHistory();
+  const snapshot = () => JSON.stringify(state.schedule);
+  history.reset(snapshot());
 
   const listeners = new Map();
 
@@ -61,14 +70,26 @@
     emit(...ALL_TOPICS);
   }
 
-  /** Record a change to saved data, then re-render the given topics. */
+  /**
+   * Group typing in one field into a single undo step. Clicks on buttons and
+   * checkboxes are always their own step.
+   */
+  function currentGroupKey() {
+    const el = document.activeElement;
+    if (!el || !el.id) return null;
+    const isTextLike = (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes(el.type)) || el.tagName === 'TEXTAREA';
+    return isTextLike ? el.id : null;
+  }
+
+  /** Record a change to saved data as an undo step, then re-render the given topics. */
   function markChanged(...topics) {
     state.hasUnexportedChanges = true;
     if (state.isExample) {
       state.isExample = false;
       topics.push('banner');
     }
-    emit(...topics, 'status');
+    history.record(snapshot(), currentGroupKey());
+    emit(...topics, 'status', 'history');
   }
 
   /** Record a successful export or save. */
@@ -78,19 +99,32 @@
     emit('status');
   }
 
-  /** Replace the whole schedule (start blank or import) and re-render everything. */
+  function closeEditor() {
+    state.draft = null;
+    state.editingId = null;
+  }
+
+  /** Replace the whole schedule (start blank or open a file); this also clears undo history. */
   function replaceSchedule(schedule) {
-    Object.assign(state, {
-      schedule,
-      isExample: false,
-      hasUnexportedChanges: false,
-      hasExported: false,
-      draft: null,
-      editingId: null,
-      pendingDeleteId: null,
-    });
+    Object.assign(state, { schedule, isExample: false, hasUnexportedChanges: false, hasExported: false });
+    closeEditor();
+    history.reset(snapshot());
     emitAll();
   }
+
+  function restore(saved) {
+    if (saved === null) return false;
+    state.schedule = JSON.parse(saved);
+    state.hasUnexportedChanges = true;
+    closeEditor(); // an open editor would refer to the old version
+    emitAll();
+    return true;
+  }
+
+  /** @returns {boolean} false when there was nothing to undo */
+  const undo = () => restore(history.undo());
+  /** @returns {boolean} false when there was nothing to redo */
+  const redo = () => restore(history.redo());
 
   /** @returns {object[]} saved courses, with the course being edited shown as a preview */
   function displayedCourses() {
@@ -107,5 +141,18 @@
     return courses;
   }
 
-  TSB.store = Object.freeze({ state, subscribe, emit, emitAll, markChanged, markExported, replaceSchedule, displayedCourses });
+  TSB.store = Object.freeze({
+    state,
+    subscribe,
+    emit,
+    emitAll,
+    markChanged,
+    markExported,
+    replaceSchedule,
+    displayedCourses,
+    undo,
+    redo,
+    canUndo: () => history.canUndo(),
+    canRedo: () => history.canRedo(),
+  });
 })(globalThis.TSB = globalThis.TSB || {});

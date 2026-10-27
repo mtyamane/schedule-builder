@@ -16,6 +16,7 @@ const SCRIPTS = [
   'core/event-text.js',
   'core/page-theme.js',
   'core/page-layout.js',
+  'core/history.js',
   'export/ics.js',
   'export/csv.js',
   'export/pdf.js',

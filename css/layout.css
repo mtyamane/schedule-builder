@@ -44,46 +44,164 @@
   align-items: center;
 }
 
-.split {
+.icon-group {
+  display: inline-flex;
+  gap: 2px;
+}
+
+/*
+ * Workspace.
+ * Phones: one part at a time, chosen with the bottom tab bar (body[data-mobile-tab]).
+ * Desktop: settings on the left and the preview on the right, each scrolling on its own.
+ */
+.workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); /* room for the tab bar */
 }
 
 .pane {
   min-width: 0;
-  padding-block: 20px;
+  padding-block: 16px 24px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-.pane--inputs {
+.pane--preview {
+  background: var(--surface);
+}
+
+.side-panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.pane--calendar {
+/* Schedule | Style tabs at the top of the left pane (desktop only). */
+.side-tabs {
+  display: none;
+}
+
+body[data-mobile-tab="preview"] .pane--side,
+body:not([data-mobile-tab="preview"]) .pane--preview {
+  display: none;
+}
+
+/* Bottom tab bar (phones and small tablets). */
+.mobile-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
 
+.mobile-tabs button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  padding: 8px 4px 10px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mobile-tabs svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-tabs button[aria-current="page"] {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .brand small {
+    display: none;
+  }
+}
+
 @media (min-width: 960px) {
-  .split {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
   }
 
-  .pane--inputs {
-    padding-right: 24px;
+  .workspace {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
+    padding-bottom: 0;
   }
 
-  .pane--calendar {
-    position: sticky;
-    top: env(safe-area-inset-top, 0px);
-    align-self: start;
-    max-height: 100vh;
+  .pane {
     overflow-y: auto;
-    padding-left: 24px;
-    border-top: 0;
-    border-left: 1px solid var(--line);
+    overscroll-behavior: contain;
+  }
+
+  .pane--side {
+    padding-top: 0;
+    border-right: 1px solid var(--line);
+  }
+
+  .pane--preview {
+    padding-inline: 24px;
+  }
+
+  /* Both panes always show on desktop. */
+  body[data-mobile-tab] .pane--side,
+  body[data-mobile-tab] .pane--preview {
+    display: block;
+  }
+
+  .mobile-tabs {
+    display: none;
+  }
+
+  .side-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    margin-inline: -4px;
+    margin-bottom: 14px;
+    padding: 12px 4px 10px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .side-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .side-tab:hover {
+    color: var(--ink);
+  }
+
+  .side-tab[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
 }

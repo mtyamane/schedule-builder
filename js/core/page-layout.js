@@ -37,7 +37,8 @@
    * @typedef {{type: 'line', x1: number, y1: number, x2: number, y2: number, color: string, width: number}} LineItem
    * @typedef {{type: 'text', x: number, y: number, text: string, size: number, weight: number, role: string, color: string, opacity?: number}} TextItem
    *   `y` is the text baseline; `x` is the left edge.
-   * @typedef {{type: 'group', clip: {x: number, y: number, w: number, h: number, radius: number}, items: Array, tooltip?: string}} GroupItem
+   * @typedef {{type: 'group', clip: {x: number, y: number, w: number, h: number, radius: number}, items: Array, tooltip?: string, courseId?: string, isPreview?: boolean, overlaps?: boolean}} GroupItem
+   *   One class block. courseId, isPreview and overlaps are used by the on-screen preview; exports ignore them.
    *
    * @typedef {Object} PageLayout
    * @property {number} width
@@ -312,6 +313,10 @@
         type: 'group',
         clip: { x, y, w, h, radius },
         tooltip,
+        // For the on-screen preview only: which class to edit on click, and whether to flag an overlap.
+        courseId: event.course.id,
+        isPreview: event.isPreview,
+        overlaps: event.overlaps,
         items: [
           { type: 'rect', x, y, w, h, radius, fill: colors.fill, stroke: colors.border, strokeWidth: (event.isFinal ? 1.4 : 0.75) * colors.borderScale, dashed: event.isPreview },
           ...children,
