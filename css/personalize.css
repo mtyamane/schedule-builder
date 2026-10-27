@@ -105,26 +105,55 @@
   white-space: nowrap;
 }
 
-/* Size sliders */
-.size-slider {
+/* Point size fields */
+.size-grid {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr) 46px;
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 16px;
+}
+
+.size-field {
+  display: flex;
+  gap: 8px;
   align-items: center;
+  justify-content: space-between;
   font-size: 13px;
   font-weight: 500;
 }
 
-.size-slider input {
-  width: 100%;
-  accent-color: var(--accent);
+.size-field__input {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
 }
 
-.size-slider output {
+.size-field input {
+  width: 64px;
+  padding: 5px 7px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
   text-align: right;
+}
+
+.size-field input:focus {
+  border-color: var(--accent);
+}
+
+.hour-range {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
   color: var(--muted);
+}
+
+.hour-range select {
+  width: auto;
+  background: var(--surface);
 }
 
 /* Block detail toggles */

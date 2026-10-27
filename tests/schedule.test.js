@@ -65,18 +65,49 @@ test('normalizeSchedule accepts files from earlier versions', () => {
   assert.equal(schedule.courses[0].code, 'MATH 126');
   assert.match(schedule.courses[0].color, /^#/);
   assert.deepEqual(schedule.courses[0].meetings[0].days, [1, 3]);
-  assert.equal(schedule.style.sizePreset, 'L');
+  assert.equal(schedule.style.fontSizes.title, 27.5); // Large preset, old title multiplier out of range → 100%
+  assert.equal(schedule.style.fontSizes.code, 11);
   assert.equal(schedule.style.blockDetails.name, true);
   assert.equal(schedule.style.blockDetails.time, true); // default kept
   assert.equal(schedule.style.blockColor, 'bold');
-  assert.equal(schedule.style.imageBackground, 'dark');
-  assert.equal(schedule.style.sizes.title, 1); // out of range → default
+  assert.equal(schedule.style.pageBackground, 'dark');
 });
 
 test('normalizeStyle maps the removed "classic" font to the default Clean font', () => {
   assert.equal(model.defaultStyle().font, 'clean');
   assert.equal(model.normalizeStyle({ font: 'classic' }).font, 'clean');
   assert.equal(model.normalizeStyle({ font: 'serif' }).font, 'serif');
+});
+
+test('font sizes: presets, matching and clamping', () => {
+  const { presetFontSizes } = TSB.constants;
+  assert.deepEqual(presetFontSizes('M'), { title: 24, subtitle: 12, day: 11, time: 8, code: 9.5, details: 8, legend: 8.5 });
+  assert.equal(presetFontSizes('L').title, 27.5);
+  assert.equal(model.matchingSizePreset(presetFontSizes('S')), 'S');
+  assert.equal(model.matchingSizePreset({ ...presetFontSizes('M'), title: 25 }), null);
+  assert.equal(model.clampFontSize('title', '100'), 48);
+  assert.equal(model.clampFontSize('code', '10.3'), 10.5);
+  assert.equal(model.clampFontSize('code', ''), null);
+});
+
+test('normalizeStyle keeps valid new settings and rejects bad ones', () => {
+  const style = model.normalizeStyle({
+    page: { paper: 'a4', orientation: 'portrait', margins: 'huge' },
+    hourStart: 9, hourEnd: 7, days: 'mon-sat', legend: 'right', grayscale: true,
+    coursePalette: 'colorblind', blockColor: 'outline', header: { subtitle: false },
+    fontSizes: { title: 30, code: 'big' },
+  });
+  assert.deepEqual(style.page, { paper: 'a4', orientation: 'portrait', margins: 'normal' });
+  assert.equal(style.hourStart, 9);
+  assert.equal(style.hourEnd, null); // end before start is dropped
+  assert.equal(style.days, 'mon-sat');
+  assert.equal(style.legend, 'right');
+  assert.equal(style.grayscale, true);
+  assert.equal(style.coursePalette, 'colorblind');
+  assert.equal(style.blockColor, 'outline');
+  assert.deepEqual(style.header, { subtitle: false, viewLabel: true, weekRange: true });
+  assert.equal(style.fontSizes.title, 30);
+  assert.equal(style.fontSizes.code, 9.5); // invalid → default
 });
 
 test('normalizeSchedule rejects files that are not schedules', () => {

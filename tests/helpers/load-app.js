@@ -14,6 +14,8 @@ const SCRIPTS = [
   'core/schedule.js',
   'core/week-view.js',
   'core/event-text.js',
+  'core/page-theme.js',
+  'core/page-layout.js',
   'export/ics.js',
   'export/csv.js',
   'export/pdf.js',

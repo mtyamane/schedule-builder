@@ -1,36 +1,8 @@
 /*
- * Weekly calendar on screen.
- * Personalize settings set these variables on #calendar-pane:
- *   --cal-font-title, --cal-font-body, --cal-font-code, --cal-weight-title, --cal-weight-code,
- *   --scale-title, --scale-day, --scale-block, --scale-time, --hour, --block-radius, --time-column
+ * Calendar pane: view tabs, the note, and the page preview.
+ * The page itself is an SVG drawn by js/ui/calendar-view.js from the same
+ * layout as the export, so its colors and sizes come from the layout, not CSS.
  */
-
-.calendar-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 14px;
-}
-
-.calendar-heading h2 {
-  font-family: var(--cal-font-title, var(--font));
-  font-size: calc(clamp(24px, 3.2vw, 34px) * var(--scale-title, 1));
-  font-weight: var(--cal-weight-title, 800);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.calendar-heading h2.is-placeholder {
-  color: var(--muted);
-  opacity: 0.6;
-}
-
-.calendar-heading p {
-  margin: 0;
-  font-family: var(--cal-font-body, var(--font));
-  font-size: calc(14px * (0.5 + 0.5 * var(--scale-title, 1)));
-  color: var(--muted);
-}
 
 /* View tabs */
 .view-tabs {
@@ -70,173 +42,40 @@
   color: var(--muted);
 }
 
-/* Grid */
+/*
+ * Page preview. It scrolls sideways on narrow screens rather than shrinking
+ * the text below a readable size.
+ */
 .calendar-scroll {
   overflow-x: auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  font-family: var(--cal-font-body, var(--font));
+  padding: 2px 2px 6px;
 }
 
-.calendar {
-  min-width: 480px;
+.page-frame {
+  width: 100%;
+  min-width: 600px;
+  margin-inline: auto;
 }
 
-.calendar__head,
-.calendar__body {
-  display: grid;
-  grid-template-columns: var(--time-column, 52px) repeat(var(--day-count), minmax(0, 1fr));
+.page-frame[data-orientation="portrait"] {
+  min-width: 440px;
+  max-width: 640px;
 }
 
-.calendar__head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+.page-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--line), 0 6px 18px rgba(16, 24, 40, 0.1);
 }
 
-.calendar__day-label {
-  display: flex;
-  flex-direction: column;
-  padding: 8px 6px;
-  border-left: 1px solid var(--line);
-  text-align: center;
-  line-height: 1.2;
+.page-svg text {
+  white-space: pre;
 }
 
-.calendar__day-label b {
-  font-family: var(--cal-font-title, var(--font));
-  font-size: calc(14px * var(--scale-day, 1));
-  font-weight: var(--cal-weight-title, 700);
-}
-
-.calendar__day-label span {
-  font-family: var(--cal-font-code, var(--font));
-  font-size: calc(11px * var(--scale-day, 1));
-  color: var(--muted);
-}
-
-.calendar__day-label.is-off b {
-  color: var(--muted);
-}
-
-.calendar__body {
-  position: relative;
-  padding-top: 10px;
-  padding-bottom: 4px;
-}
-
-.calendar__times {
-  position: relative;
-  height: calc(var(--hour-count) * var(--hour));
-}
-
-.calendar__times span {
-  position: absolute;
-  right: 8px;
-  transform: translateY(-50%);
-  font-family: var(--cal-font-code, var(--font));
-  font-size: calc(10.5px * var(--scale-time, 1));
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.calendar__column {
-  position: relative;
-  height: calc(var(--hour-count) * var(--hour));
-  border-left: 1px solid var(--line);
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(color-mix(in srgb, var(--grid) 55%, transparent) 1px, transparent 1px);
-  background-size: 100% var(--hour), 100% var(--hour);
-  background-position: 0 0, 0 calc(var(--hour) / 2);
-}
-
-.calendar__column.is-off {
-  background-color: var(--hatch);
-  background-image: repeating-linear-gradient(
-    135deg,
-    transparent 0 8px,
-    color-mix(in srgb, var(--line) 70%, transparent) 8px 9px
-  );
-}
-
-.calendar__off-label {
-  position: absolute;
-  top: 12px;
-  left: 4px;
-  right: 4px;
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1.25;
-  text-align: center;
-  color: var(--muted);
-}
-
-/* Event blocks. --course-color and --on-color are set inline per block. */
-.event {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 4px 6px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--course-color) 55%, var(--surface));
-  border-radius: var(--block-radius, 6px);
-  background: color-mix(in srgb, var(--course-color) 20%, var(--surface));
-  color: color-mix(in srgb, var(--course-color) 45%, var(--ink));
-  font-size: calc(11.5px * var(--scale-block, 1));
-  line-height: 1.25;
-}
-
-/* Lines keep their height; extra lines are hidden by the block instead of squeezed together. */
-.event > * {
-  flex-shrink: 0;
-}
-
-.event b {
-  overflow: hidden;
-  font-family: var(--cal-font-code, var(--font));
-  font-size: calc(11.5px * var(--scale-block, 1));
-  font-weight: var(--cal-weight-code, 500);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.event b i {
-  margin-left: 4px;
-  font-style: normal;
-  opacity: 0.75;
-}
-
-.event span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: 0.9;
-}
-
-.event--final {
-  border-width: 2px;
-}
-
-.event--preview {
-  border-style: dashed;
-  opacity: 0.85;
-}
-
-.event--bold {
-  background: var(--course-color);
-  border-color: color-mix(in srgb, var(--course-color) 78%, #000);
-  color: var(--on-color);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .event {
-    transition: top 0.15s, height 0.15s;
-  }
+.page-event:hover > g {
+  filter: brightness(0.97);
 }
 
 /* Image actions under the calendar */

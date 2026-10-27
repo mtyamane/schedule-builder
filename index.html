@@ -27,6 +27,8 @@
   <script defer src="js/core/schedule.js"></script>
   <script defer src="js/core/week-view.js"></script>
   <script defer src="js/core/event-text.js"></script>
+  <script defer src="js/core/page-theme.js"></script>
+  <script defer src="js/core/page-layout.js"></script>
   <script defer src="js/export/ics.js"></script>
   <script defer src="js/export/csv.js"></script>
   <script defer src="js/export/pdf.js"></script>
@@ -117,29 +119,44 @@
 
     <!-- Right / bottom: calendar -->
     <section class="pane pane--calendar" id="calendar-pane" aria-label="Weekly calendar">
-      <div class="calendar-heading">
-        <h2 id="calendar-title"></h2>
-        <p id="calendar-subtitle" hidden></p>
-      </div>
-
       <div class="view-tabs" role="tablist" aria-label="Calendar view">
         <button class="view-tab" role="tab" id="tab-week1" data-view="week1">First week</button>
         <button class="view-tab" role="tab" id="tab-weekly" data-view="weekly">Regular week</button>
         <button class="view-tab" role="tab" id="tab-finals" data-view="finals">Finals week</button>
       </div>
       <p class="calendar-note" id="calendar-note"></p>
-      <div class="calendar-scroll"><div id="calendar"></div></div>
+      <div class="calendar-scroll"><div class="page-frame" id="calendar"></div></div>
 
       <div class="calendar-actions">
         <button class="btn" id="download-png">Download image (PNG)</button>
         <button class="btn" id="download-pdf">Download printable PDF</button>
         <button class="btn" id="print-calendar">Print</button>
-        <p class="hint">Uses the view shown above on a letter-size landscape page.</p>
+        <p class="hint">Downloads and prints exactly the page shown above. Change paper size and layout under Personalize calendar.</p>
       </div>
 
       <details class="personalize" id="personalize">
         <summary>Personalize calendar</summary>
         <div class="personalize__body">
+          <div class="personalize__group">
+            <span class="eyebrow">Page</span>
+            <div class="option-row">
+              <span>Paper</span>
+              <div class="segmented" data-setting="page.paper"><button data-value="letter">Letter</button><button data-value="a4">A4</button></div>
+            </div>
+            <div class="option-row">
+              <span>Orientation</span>
+              <div class="segmented" data-setting="page.orientation"><button data-value="landscape">Landscape</button><button data-value="portrait">Portrait</button></div>
+            </div>
+            <div class="option-row">
+              <span>Margins</span>
+              <div class="segmented" data-setting="page.margins"><button data-value="narrow">Narrow</button><button data-value="normal">Normal</button><button data-value="wide">Wide</button></div>
+            </div>
+            <div class="option-row">
+              <span>Background</span>
+              <div class="segmented" data-setting="pageBackground"><button data-value="white">White</button><button data-value="tint">Tinted</button><button data-value="dark">Dark</button></div>
+            </div>
+          </div>
+
           <div class="personalize__group">
             <span class="eyebrow">Font</span>
             <div class="font-grid" id="font-grid"></div>
@@ -147,19 +164,17 @@
 
           <div class="personalize__group">
             <div class="option-row">
-              <span class="eyebrow">Text size</span>
+              <span class="eyebrow">Text size (pt)</span>
               <button class="btn btn--ghost btn--small" id="reset-sizes">Reset sizes</button>
             </div>
-            <div class="segmented" role="group" aria-label="Overall size" data-setting="sizePreset">
-              <button data-value="S">Small</button>
-              <button data-value="M">Medium</button>
-              <button data-value="L">Large</button>
-              <button data-value="XL">Extra large</button>
+            <div class="segmented" role="group" aria-label="Size preset" id="size-presets">
+              <button data-preset="S">Small</button>
+              <button data-preset="M">Medium</button>
+              <button data-preset="L">Large</button>
+              <button data-preset="XL">Extra large</button>
             </div>
-            <label class="size-slider"><span>Title</span><input type="range" id="size-title" data-size-key="title" min="70" max="160" step="5"><output id="size-title-value"></output></label>
-            <label class="size-slider"><span>Day headers</span><input type="range" id="size-day" data-size-key="day" min="70" max="160" step="5"><output id="size-day-value"></output></label>
-            <label class="size-slider"><span>Class blocks</span><input type="range" id="size-block" data-size-key="block" min="70" max="160" step="5"><output id="size-block-value"></output></label>
-            <label class="size-slider"><span>Time labels</span><input type="range" id="size-time" data-size-key="time" min="70" max="160" step="5"><output id="size-time-value"></output></label>
+            <div class="size-grid" id="size-grid"></div>
+            <p class="hint">1 pt is 1/72 inch on the printed page. The view label and week range use the subtitle size, and dates under day names are 80% of the day header size.</p>
           </div>
 
           <div class="personalize__group">
@@ -171,15 +186,41 @@
               <label class="toggle-chip"><input type="checkbox" id="detail-instructor" data-detail="instructor"> Instructor</label>
               <label class="toggle-chip"><input type="checkbox" id="detail-type" data-detail="type"> Section type</label>
             </div>
-            <p class="hint">The course code always shows. Section types appear only for classes with more than one meeting type.</p>
+            <p class="hint">The course code always shows. Section types appear only for classes with more than one meeting type. Details that don't fit in a short block are left off.</p>
+          </div>
+
+          <div class="personalize__group">
+            <span class="eyebrow">Header and legend</span>
+            <div class="toggle-chips">
+              <label class="toggle-chip"><input type="checkbox" id="header-subtitle" data-header="subtitle"> Subtitle</label>
+              <label class="toggle-chip"><input type="checkbox" id="header-viewLabel" data-header="viewLabel"> View label</label>
+              <label class="toggle-chip"><input type="checkbox" id="header-weekRange" data-header="weekRange"> Week range</label>
+            </div>
+            <div class="option-row">
+              <span>Legend</span>
+              <div class="segmented" data-setting="legend"><button data-value="top">Top</button><button data-value="bottom">Bottom</button><button data-value="left">Left</button><button data-value="right">Right</button><button data-value="off">Off</button></div>
+            </div>
+          </div>
+
+          <div class="personalize__group">
+            <span class="eyebrow">Hours and days</span>
+            <div class="option-row">
+              <span>Hours</span>
+              <div class="hour-range">
+                <select id="hour-start" aria-label="First hour shown"></select>
+                <span>to</span>
+                <select id="hour-end" aria-label="Last hour shown"></select>
+              </div>
+            </div>
+            <div class="option-row">
+              <span>Days</span>
+              <div class="segmented" data-setting="days"><button data-value="auto">Auto</button><button data-value="weekdays">Mon–Fri</button><button data-value="mon-sat">Mon–Sat</button><button data-value="all">Every day</button></div>
+            </div>
+            <p class="hint">All three views use the same hours and days so they line up. Auto fits every class. A class outside the hours you pick stretches the range so it still shows.</p>
           </div>
 
           <div class="personalize__group">
             <span class="eyebrow">Layout</span>
-            <div class="option-row">
-              <span>Row height</span>
-              <div class="segmented" data-setting="rowHeight"><button data-value="compact">Compact</button><button data-value="normal">Normal</button><button data-value="roomy">Roomy</button></div>
-            </div>
             <div class="option-row">
               <span>Time format</span>
               <div class="segmented" data-setting="clock"><button data-value="12">12-hour</button><button data-value="24">24-hour</button></div>
@@ -193,14 +234,15 @@
           <div class="personalize__group">
             <span class="eyebrow">Colors</span>
             <div class="option-row">
-              <span>Block color</span>
-              <div class="segmented" data-setting="blockColor"><button data-value="soft">Soft</button><button data-value="bold">Bold</button></div>
+              <span>Block style</span>
+              <div class="segmented" data-setting="blockColor"><button data-value="soft">Soft</button><button data-value="bold">Bold</button><button data-value="outline">Outline</button></div>
             </div>
             <div class="option-row">
-              <span>Image background</span>
-              <div class="segmented" data-setting="imageBackground"><button data-value="white">White</button><button data-value="tint">Tinted</button><button data-value="dark">Dark</button></div>
+              <span>Course colors</span>
+              <div class="segmented" data-setting="coursePalette"><button data-value="standard">Standard</button><button data-value="colorblind">Colorblind-safe</button></div>
             </div>
-            <p class="hint">Image background applies to PNG, PDF and print. Block color applies everywhere.</p>
+            <label class="checkbox"><input type="checkbox" id="style-grayscale"> Grayscale, for black-and-white printers</label>
+            <p class="hint">Outline uses the least ink. Switching course colors recolors classes that use a palette color and keeps custom colors.</p>
           </div>
         </div>
       </details>

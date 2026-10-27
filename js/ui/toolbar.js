@@ -6,7 +6,7 @@
 (function (TSB) {
   'use strict';
 
-  const { VIEWS } = TSB.constants;
+  const { VIEWS, PAPER_SIZES } = TSB.constants;
   const { byId, showToast, showModal, downloadFile, printImage } = TSB.dom;
   const { buildIcs } = TSB.ics;
   const { buildGoogleCsv } = TSB.csv;
@@ -95,22 +95,28 @@
   const imageBaseName = () => `${fileBaseName()}-${VIEWS[store.state.view].fileSuffix}`;
 
   async function downloadPng() {
-    const canvas = await renderCurrentView();
+    const { canvas } = await renderCurrentView();
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     downloadFile(`${imageBaseName()}.png`, blob);
     showToast(`Downloaded ${imageBaseName()}.png`);
   }
 
   async function downloadPdf() {
-    const canvas = await renderCurrentView();
-    const pdf = buildImagePdf(canvasToJpegBytes(canvas), canvas.width, canvas.height);
+    const { canvas, layout } = await renderCurrentView();
+    // The image already includes the page margins, so it fills the PDF page.
+    const pdf = buildImagePdf(canvasToJpegBytes(canvas), canvas.width, canvas.height, {
+      pageWidth: layout.width,
+      pageHeight: layout.height,
+      margin: 0,
+    });
     downloadFile(`${imageBaseName()}.pdf`, new Blob([pdf], { type: 'application/pdf' }));
     showToast(`Downloaded ${imageBaseName()}.pdf`);
   }
 
   async function printView() {
-    const canvas = await renderCurrentView();
-    printImage(canvas.toDataURL('image/png'), store.state.schedule.title || 'Class schedule');
+    const { canvas, layout } = await renderCurrentView();
+    const pageSize = `${PAPER_SIZES[layout.page.paper].css} ${layout.page.orientation}`;
+    printImage(canvas.toDataURL('image/png'), store.state.schedule.title || 'Class schedule', pageSize);
   }
 
   /* ---------- status, banner, leave warning ---------- */

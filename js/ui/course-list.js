@@ -8,13 +8,15 @@
 (function (TSB) {
   'use strict';
 
-  const { COURSE_COLORS, DAY_NAMES, DAY_LETTERS, WEEK_ORDER, MEETING_TYPES, SEPARATOR } = TSB.constants;
+  const { COURSE_PALETTES, DAY_NAMES, DAY_LETTERS, WEEK_ORDER, MEETING_TYPES, SEPARATOR } = TSB.constants;
   const { parseDate, parseTime, formatDate, formatDays, formatTimeRange } = TSB.dates;
   const { byId, escapeHtml, joinWithSeparators, SEPARATOR_HTML, showToast } = TSB.dom;
   const model = TSB.schedule;
   const store = TSB.store;
 
   const list = () => byId('course-list');
+  /** Swatch colors offered in the editor, from the chosen course palette. */
+  const courseColors = () => COURSE_PALETTES[store.state.schedule.style.coursePalette] || COURSE_PALETTES.standard;
   const emptyFinal = () => ({ date: '', start: '', end: '', location: '' });
 
   /* ---------- course cards ---------- */
@@ -90,7 +92,7 @@
   }
 
   function editorHtml(draft, isNew) {
-    const swatches = COURSE_COLORS
+    const swatches = courseColors()
       .map((color) => `<button type="button" class="swatch-button" style="--swatch:${color}" data-color="${color}" aria-pressed="${draft.color.toLowerCase() === color}" aria-label="Color ${color}"></button>`)
       .join('');
     const final = draft.finalDraft;
@@ -144,7 +146,8 @@
 
   function nextUnusedColor() {
     const used = new Set(store.state.schedule.courses.map((c) => c.color));
-    return COURSE_COLORS.find((c) => !used.has(c)) || COURSE_COLORS[store.state.schedule.courses.length % COURSE_COLORS.length];
+    const colors = courseColors();
+    return colors.find((c) => !used.has(c)) || colors[store.state.schedule.courses.length % colors.length];
   }
 
   /** @param {string} courseId course id, or 'new' */

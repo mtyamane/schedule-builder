@@ -25,10 +25,20 @@
   /** iCalendar BYDAY codes indexed like Date#getDay(). */
   const ICS_DAY_CODES = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
-  const COURSE_COLORS = [
-    '#3b5bdb', '#0ca678', '#e8590c', '#c2255c', '#7048e8',
-    '#1098ad', '#e0a100', '#2f9e44', '#868e96', '#a61e4d',
-  ];
+  /**
+   * Course color palettes. Switching palettes recolors classes by position,
+   * so the nth standard color becomes the nth colorblind-safe color.
+   * The colorblind-safe set is the Okabe–Ito palette.
+   */
+  const COURSE_PALETTES = {
+    standard: [
+      '#3b5bdb', '#0ca678', '#e8590c', '#c2255c', '#7048e8',
+      '#1098ad', '#e0a100', '#2f9e44', '#868e96', '#a61e4d',
+    ],
+    colorblind: ['#0072b2', '#e69f00', '#009e73', '#cc79a7', '#56b4e9', '#d55e00', '#f0e442', '#000000'],
+  };
+
+  const COURSE_COLORS = COURSE_PALETTES.standard;
 
   /** Three-letter meeting type codes. LEC is the default for a course's main meeting. */
   const MEETING_TYPES = [
@@ -67,14 +77,54 @@
   /** Separator between items in plain text, such as select options and image text. */
   const SEPARATOR = ' | ';
 
-  /** Overall text size multipliers. */
-  const SIZE_PRESETS = { S: 0.85, M: 1, L: 1.15, XL: 1.3 };
+  /**
+   * Calendar text elements with their own size, in points (1 pt = 1/72 inch).
+   * `base` is the Medium preset. Other text follows these:
+   * the view label and week range use the subtitle size, dates under day
+   * names are 80% of the day header size, and "no classes" labels use the
+   * class details size.
+   */
+  const FONT_SIZE_ELEMENTS = [
+    { key: 'title', label: 'Title', base: 24, min: 12, max: 48 },
+    { key: 'subtitle', label: 'Subtitle', base: 12, min: 7, max: 24 },
+    { key: 'day', label: 'Day headers', base: 11, min: 7, max: 20 },
+    { key: 'time', label: 'Time labels', base: 8, min: 5, max: 14 },
+    { key: 'code', label: 'Class code', base: 9.5, min: 6, max: 18 },
+    { key: 'details', label: 'Class details', base: 8, min: 5, max: 16 },
+    { key: 'legend', label: 'Legend', base: 8.5, min: 6, max: 16 },
+  ];
 
-  /** Per-element size slider bounds, as multipliers. */
-  const SIZE_RANGE = { min: 0.7, max: 1.6 };
+  /** Size presets as multipliers of the base sizes, rounded to the nearest half point. */
+  const SIZE_PRESET_FACTORS = { S: 0.85, M: 1, L: 1.15, XL: 1.3 };
 
-  /** Base on-screen pixel height of one hour for each row-height option. */
-  const ROW_HEIGHTS = { compact: 36, normal: 46, roomy: 60 };
+  /** @returns {Object<string, number>} point sizes for a preset key */
+  function presetFontSizes(preset) {
+    const factor = SIZE_PRESET_FACTORS[preset] || 1;
+    return Object.fromEntries(FONT_SIZE_ELEMENTS.map((el) => [el.key, Math.round(el.base * factor * 2) / 2]));
+  }
+
+  /** Paper sizes in points, landscape orientation (width > height). */
+  const PAPER_SIZES = {
+    letter: { label: 'Letter', width: 792, height: 612, css: 'letter' },
+    a4: { label: 'A4', width: 842, height: 595, css: 'A4' },
+  };
+
+  /** Page margins in points. */
+  const PAGE_MARGINS = { narrow: 18, normal: 36, wide: 54 };
+
+  /** Resolution of PNG/PDF/print images, in dots per inch. */
+  const EXPORT_DPI = 200;
+
+  /**
+   * Which days the calendar shows. `null` means automatic: Monday–Friday,
+   * plus a weekend day when any view has a class on it.
+   */
+  const DAY_RANGES = {
+    auto: null,
+    weekdays: [1, 2, 3, 4, 5],
+    'mon-sat': [1, 2, 3, 4, 5, 6],
+    all: [1, 2, 3, 4, 5, 6, 0],
+  };
 
   TSB.constants = Object.freeze({
     DAY_NAMES,
@@ -83,14 +133,19 @@
     WEEK_ORDER,
     WEEKDAYS,
     ICS_DAY_CODES,
+    COURSE_PALETTES,
     COURSE_COLORS,
     MEETING_TYPES,
     VIEWS,
     REGIONS,
     FONTS,
     SEPARATOR,
-    SIZE_PRESETS,
-    SIZE_RANGE,
-    ROW_HEIGHTS,
+    FONT_SIZE_ELEMENTS,
+    SIZE_PRESET_FACTORS,
+    presetFontSizes,
+    PAPER_SIZES,
+    PAGE_MARGINS,
+    EXPORT_DPI,
+    DAY_RANGES,
   });
 })(globalThis.TSB = globalThis.TSB || {});

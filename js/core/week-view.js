@@ -6,8 +6,8 @@
 (function (TSB) {
   'use strict';
 
-  const { WEEK_ORDER, WEEKDAYS, MONTH_NAMES } = TSB.constants;
-  const { parseDate, parseTime, addDays, mondayOf, toIsoDate, formatDate } = TSB.dates;
+  const { WEEK_ORDER, WEEKDAYS, MONTH_NAMES, DAY_RANGES } = TSB.constants;
+  const { parseDate, parseTime, addDays, mondayOf, toIsoDate, formatDate, formatHour } = TSB.dates;
   const model = TSB.schedule;
 
   const DEFAULT_START_HOUR = 8;
@@ -206,6 +206,42 @@
   const BUILDERS = { weekly: buildRegularWeek, week1: buildFirstWeek, finals: buildFinalsWeek };
 
   /**
+   * Hours and days shared by all three views, so they line up.
+   * Automatic hours cover 8 AM–5 PM plus any class in any view. Hours set by
+   * the person stretch only when a class falls outside them, so no class is
+   * ever hidden by the hour range.
+   * @param {object} schedule
+   * @param {object[]} courses
+   * @returns {{startHour: number, endHour: number, days: number[], stretched: boolean}}
+   */
+  function displayFrame(schedule, courses) {
+    const style = schedule.style || {};
+    const allEvents = Object.values(BUILDERS).flatMap((build) => build(schedule, courses).events);
+
+    let startHour = style.hourStart ?? DEFAULT_START_HOUR;
+    let endHour = style.hourEnd ?? DEFAULT_END_HOUR;
+    let stretched = false;
+    if (allEvents.length) {
+      const earliest = Math.floor(Math.min(...allEvents.map((e) => e.start)) / 60);
+      const latest = Math.ceil(Math.max(...allEvents.map((e) => e.end)) / 60);
+      if (earliest < startHour) {
+        stretched = stretched || style.hourStart != null;
+        startHour = earliest;
+      }
+      if (latest > endHour) {
+        stretched = stretched || style.hourEnd != null;
+        endHour = latest;
+      }
+    }
+    startHour = Math.max(0, startHour);
+    endHour = Math.min(24, Math.max(endHour, startHour + 1));
+
+    const usedDays = new Set(allEvents.map((e) => e.dayOfWeek));
+    const days = DAY_RANGES[style.days] || WEEK_ORDER.filter((d) => WEEKDAYS.includes(d) || usedDays.has(d));
+    return { startHour, endHour, days, stretched };
+  }
+
+  /**
    * @param {object} schedule
    * @param {'week1'|'weekly'|'finals'} viewKey
    * @param {object[]} [courses] courses to show (defaults to the schedule's; may include an editing preview)
@@ -213,27 +249,26 @@
    */
   function buildWeekView(schedule, viewKey, courses = schedule.courses) {
     const build = BUILDERS[viewKey] || buildRegularWeek;
-    const { days, events, rangeLabel, note } = build(schedule, courses);
+    const built = build(schedule, courses);
+    const frame = displayFrame(schedule, courses);
 
-    // Weekdays always show; weekend days show only when something is on them.
-    const usedDays = new Set(events.map((e) => e.dayOfWeek));
-    const visibleDays = days.filter((d) => WEEKDAYS.includes(d.dayOfWeek) || usedDays.has(d.dayOfWeek));
-
-    let startHour = DEFAULT_START_HOUR;
-    let endHour = DEFAULT_END_HOUR;
-    if (events.length) {
-      startHour = Math.min(startHour, Math.floor(Math.min(...events.map((e) => e.start)) / 60));
-      endHour = Math.max(endHour, Math.ceil(Math.max(...events.map((e) => e.end)) / 60));
-    }
-    startHour = Math.max(0, startHour);
-    endHour = Math.min(24, Math.max(endHour, startHour + 1));
-
-    for (const day of visibleDays) {
+    const shown = new Set(frame.days);
+    const days = built.days.filter((d) => shown.has(d.dayOfWeek));
+    const events = built.events.filter((e) => shown.has(e.dayOfWeek));
+    for (const day of days) {
       assignLanes(events.filter((e) => e.dayOfWeek === day.dayOfWeek));
     }
 
-    return { days: visibleDays, events, startHour, endHour, rangeLabel, note };
+    let note = built.note;
+    const hidden = built.events.length - events.length;
+    if (hidden) note += ` ${plural(hidden, 'meeting')} on hidden days ${hidden === 1 ? "isn't" : "aren't"} shown.`;
+    if (frame.stretched) {
+      const clock = (schedule.style && schedule.style.clock) || '12';
+      note += ` Hours extended to ${formatHour(frame.startHour, clock)}–${formatHour(frame.endHour, clock)} to fit every class.`;
+    }
+
+    return { days, events, startHour: frame.startHour, endHour: frame.endHour, rangeLabel: built.rangeLabel, note };
   }
 
-  TSB.weekView = Object.freeze({ buildWeekView, assignLanes });
+  TSB.weekView = Object.freeze({ buildWeekView, assignLanes, displayFrame });
 })(globalThis.TSB = globalThis.TSB || {});

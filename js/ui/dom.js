@@ -92,11 +92,12 @@
   }
 
   /**
-   * Print an image on a landscape page using a hidden iframe.
+   * Print a full-page image using a hidden iframe.
    * @param {string} imageUrl data: or blob: URL
    * @param {string} title document title shown in the print dialog
+   * @param {string} [pageSize] CSS @page size, e.g. "letter landscape" or "A4 portrait"
    */
-  function printImage(imageUrl, title) {
+  function printImage(imageUrl, title, pageSize = 'letter landscape') {
     const frame = document.createElement('iframe');
     frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
     document.body.appendChild(frame);
@@ -104,7 +105,7 @@
     const doc = frame.contentDocument;
     doc.open();
     doc.write(`<!doctype html><title>${escapeHtml(title)}</title>
-      <style>@page{size:letter landscape;margin:0.3in}html,body{margin:0}img{display:block;width:100%;height:auto}</style>
+      <style>@page{size:${pageSize};margin:0}html,body{margin:0}img{display:block;width:100%;height:auto}</style>
       <img id="print-image" alt="">`);
     doc.close();
 

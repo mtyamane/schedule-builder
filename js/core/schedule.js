@@ -5,7 +5,7 @@
 (function (TSB) {
   'use strict';
 
-  const { COURSE_COLORS, FONTS, REGIONS, ROW_HEIGHTS, SIZE_PRESETS, SIZE_RANGE } = TSB.constants;
+  const { COURSE_COLORS, COURSE_PALETTES, FONTS, REGIONS, FONT_SIZE_ELEMENTS, SIZE_PRESET_FACTORS, presetFontSizes, PAPER_SIZES, PAGE_MARGINS, DAY_RANGES } = TSB.constants;
   const { parseDate, parseTime, addDays, mondayOf } = TSB.dates;
   const { holidaysForRegion } = TSB.holidays;
   const { isHexColor } = TSB.color;
@@ -41,16 +41,22 @@
    * @property {string} label
    * @property {boolean} [isAutomatic]
    *
-   * @typedef {Object} CalendarStyle
+   * @typedef {Object} CalendarStyle  How the calendar page looks, on screen and in exports.
    * @property {string} font        id from TSB.constants.FONTS
-   * @property {'S'|'M'|'L'|'XL'} sizePreset
-   * @property {{title: number, day: number, block: number, time: number}} sizes  multipliers
+   * @property {Object<string, number>} fontSizes  point sizes keyed by TSB.constants.FONT_SIZE_ELEMENTS
    * @property {{name: boolean, time: boolean, room: boolean, instructor: boolean, type: boolean}} blockDetails
-   * @property {'compact'|'normal'|'roomy'} rowHeight
+   * @property {{subtitle: boolean, viewLabel: boolean, weekRange: boolean}} header  which header items show
+   * @property {'top'|'bottom'|'left'|'right'|'off'} legend
+   * @property {{paper: 'letter'|'a4', orientation: 'landscape'|'portrait', margins: 'narrow'|'normal'|'wide'}} page
+   * @property {number|null} hourStart  first hour shown (0–23), or null for automatic
+   * @property {number|null} hourEnd    last hour shown (1–24), or null for automatic
+   * @property {'auto'|'weekdays'|'mon-sat'|'all'} days
    * @property {'12'|'24'} clock
    * @property {'rounded'|'square'} corners
-   * @property {'soft'|'bold'} blockColor
-   * @property {'white'|'tint'|'dark'} imageBackground
+   * @property {'soft'|'bold'|'outline'} blockColor
+   * @property {boolean} grayscale     draw course colors in gray, for black-and-white printing
+   * @property {'standard'|'colorblind'} coursePalette
+   * @property {'white'|'tint'|'dark'} pageBackground
    *
    * @typedef {Object} Schedule
    * @property {string} title
@@ -67,7 +73,7 @@
    */
 
   const FILE_APP_ID = 'term-schedule-builder';
-  const FILE_VERSION = 2;
+  const FILE_VERSION = 3;
 
   /** @returns {string} a short random id */
   function createId() {
@@ -78,15 +84,62 @@
   function defaultStyle() {
     return {
       font: 'clean',
-      sizePreset: 'M',
-      sizes: { title: 1, day: 1, block: 1, time: 1 },
+      fontSizes: presetFontSizes('M'),
       blockDetails: { name: false, time: true, room: true, instructor: false, type: true },
-      rowHeight: 'normal',
+      header: { subtitle: true, viewLabel: true, weekRange: true },
+      legend: 'bottom',
+      page: { paper: 'letter', orientation: 'landscape', margins: 'normal' },
+      hourStart: null,
+      hourEnd: null,
+      days: 'auto',
       clock: '12',
       corners: 'rounded',
       blockColor: 'soft',
-      imageBackground: 'white',
+      grayscale: false,
+      coursePalette: 'standard',
+      pageBackground: 'white',
     };
+  }
+
+  /**
+   * @param {Object<string, number>} fontSizes
+   * @returns {string|null} the preset key whose sizes match exactly, or null for custom sizes
+   */
+  function matchingSizePreset(fontSizes) {
+    return Object.keys(SIZE_PRESET_FACTORS).find((preset) => {
+      const sizes = presetFontSizes(preset);
+      return FONT_SIZE_ELEMENTS.every((el) => sizes[el.key] === fontSizes[el.key]);
+    }) || null;
+  }
+
+  /**
+   * Keep a point size within an element's allowed range, rounded to the nearest half point.
+   * @param {string} key element key from FONT_SIZE_ELEMENTS
+   * @param {*} value
+   * @returns {number|null} null when the value isn't a number
+   */
+  function clampFontSize(key, value) {
+    const element = FONT_SIZE_ELEMENTS.find((el) => el.key === key);
+    const n = Number(value);
+    if (!element || value === '' || value === null || !Number.isFinite(n)) return null;
+    return Math.min(element.max, Math.max(element.min, Math.round(n * 2) / 2));
+  }
+
+  /**
+   * Recolor courses when switching palettes: a course using the nth color of
+   * one palette gets the nth color of the other. Custom colors are kept.
+   * @param {Course[]} courses
+   * @param {'standard'|'colorblind'} from
+   * @param {'standard'|'colorblind'} to
+   * @returns {Course[]} new course objects
+   */
+  function recolorCourses(courses, from, to) {
+    const source = COURSE_PALETTES[from].map((c) => c.toLowerCase());
+    const target = COURSE_PALETTES[to];
+    return courses.map((course) => {
+      const index = source.indexOf(String(course.color).toLowerCase());
+      return index === -1 ? course : { ...course, color: target[index % target.length] };
+    });
   }
 
   /**
@@ -309,10 +362,23 @@
   const asString = (value) => (typeof value === 'string' ? value : '');
   const pickOne = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
 
-  function clampSize(value) {
-    const n = Number(value);
-    if (!(n >= SIZE_RANGE.min && n <= SIZE_RANGE.max)) return 1;
-    return Math.round(n * 20) / 20; // nearest 5%
+  /**
+   * Point sizes from a saved file. Files from version 2 stored a size preset
+   * plus percentage multipliers instead; those are converted.
+   */
+  function normalizeFontSizes(raw) {
+    const defaults = presetFontSizes('M');
+    if (raw.fontSizes && typeof raw.fontSizes === 'object') {
+      return Object.fromEntries(FONT_SIZE_ELEMENTS.map((el) => [el.key, clampFontSize(el.key, raw.fontSizes[el.key]) ?? defaults[el.key]]));
+    }
+    const preset = SIZE_PRESET_FACTORS[raw.sizePreset || raw.preset] || 1;
+    const old = raw.sizes || {};
+    const factor = (key) => {
+      const n = Number(old[key]);
+      return n >= 0.7 && n <= 1.6 ? n : 1;
+    };
+    const scaled = { title: factor('title'), subtitle: factor('title'), day: factor('day'), time: factor('time'), code: factor('block'), details: factor('block'), legend: 1 };
+    return Object.fromEntries(FONT_SIZE_ELEMENTS.map((el) => [el.key, clampFontSize(el.key, el.base * preset * scaled[el.key])]));
   }
 
   /**
@@ -325,25 +391,34 @@
     const defaults = defaultStyle();
     if (!raw || typeof raw !== 'object') return defaults;
     const details = raw.blockDetails || raw.show || {};
-    const sizes = raw.sizes || {};
-    return {
+    const header = raw.header || {};
+    const page = raw.page || {};
+    const hour = (value, min, max) => (Number.isInteger(value) && value >= min && value <= max ? value : null);
+    const boolOr = (value, fallback) => (typeof value === 'boolean' ? value : fallback);
+
+    const style = {
       font: findFont(raw.font).id,
-      sizePreset: pickOne(raw.sizePreset || raw.preset, Object.keys(SIZE_PRESETS), 'M'),
-      sizes: {
-        title: clampSize(sizes.title),
-        day: clampSize(sizes.day),
-        block: clampSize(sizes.block),
-        time: clampSize(sizes.time),
+      fontSizes: normalizeFontSizes(raw),
+      blockDetails: Object.fromEntries(Object.entries(defaults.blockDetails).map(([key, value]) => [key, boolOr(details[key], value)])),
+      header: Object.fromEntries(Object.entries(defaults.header).map(([key, value]) => [key, boolOr(header[key], value)])),
+      legend: pickOne(raw.legend, ['top', 'bottom', 'left', 'right', 'off'], 'bottom'),
+      page: {
+        paper: pickOne(page.paper, Object.keys(PAPER_SIZES), 'letter'),
+        orientation: pickOne(page.orientation, ['landscape', 'portrait'], 'landscape'),
+        margins: pickOne(page.margins, Object.keys(PAGE_MARGINS), 'normal'),
       },
-      blockDetails: Object.fromEntries(
-        Object.entries(defaults.blockDetails).map(([key, value]) => [key, typeof details[key] === 'boolean' ? details[key] : value]),
-      ),
-      rowHeight: pickOne(raw.rowHeight, Object.keys(ROW_HEIGHTS), 'normal'),
+      hourStart: hour(raw.hourStart, 0, 23),
+      hourEnd: hour(raw.hourEnd, 1, 24),
+      days: pickOne(raw.days, Object.keys(DAY_RANGES), 'auto'),
       clock: pickOne(String(raw.clock), ['12', '24'], '12'),
       corners: pickOne(raw.corners, ['rounded', 'square'], 'rounded'),
-      blockColor: pickOne(raw.blockColor || raw.blockStyle, ['soft', 'bold'], 'soft'),
-      imageBackground: pickOne(raw.imageBackground || raw.exportBg, ['white', 'tint', 'dark'], 'white'),
+      blockColor: pickOne(raw.blockColor || raw.blockStyle, ['soft', 'bold', 'outline'], 'soft'),
+      grayscale: boolOr(raw.grayscale, false),
+      coursePalette: pickOne(raw.coursePalette, Object.keys(COURSE_PALETTES), 'standard'),
+      pageBackground: pickOne(raw.pageBackground || raw.imageBackground || raw.exportBg, ['white', 'tint', 'dark'], 'white'),
     };
+    if (style.hourStart !== null && style.hourEnd !== null && style.hourEnd <= style.hourStart) style.hourEnd = null;
+    return style;
   }
 
   function normalizeMeeting(raw) {
@@ -411,6 +486,9 @@
   TSB.schedule = Object.freeze({
     createId,
     defaultStyle,
+    matchingSizePreset,
+    clampFontSize,
+    recolorCourses,
     findFont,
     regionForTimeZone,
     createMeeting,

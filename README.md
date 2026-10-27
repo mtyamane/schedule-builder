@@ -7,8 +7,8 @@ A single-page tool for planning a quarter or semester class schedule and getting
 - Three calendar views: **First week** (blocks out days before classes start and holidays), **Regular week**, and **Finals week**
 - Common holidays added automatically for the United States, Canada, or Japan, plus manual holidays
 - Export to **iCalendar (.ics)** with weekly repeating events and holidays skipped, or **CSV** in Google Calendar's import format
-- Download any view as a **PNG** or a letter-size **PDF**, or print it
-- Personalize the calendar's font, text sizes, block details, layout and colors
+- Download any view as a **PNG** or **PDF**, or print it. The on-screen calendar is a live preview of that page
+- Personalize the page: paper size (Letter or A4), orientation, margins, font, exact text sizes in points, block details, header and legend (top, bottom, left, right or off), hours and days shown, block style, grayscale and a colorblind-safe palette
 - **Save schedule** writes a .json file you can **Import** later to keep editing
 
 Nothing is stored on a server or in the browser. Use **Save schedule** to keep your work.
@@ -45,19 +45,21 @@ js/
     schedule.js         Data model: types, factories, validation, saved-file import
     week-view.js        Builds the data for one calendar view
     event-text.js       Text shown inside calendar blocks
+    page-theme.js       Page backgrounds and course block colors
+    page-layout.js      Lays out a view as a printed page (shapes and text in points)
   export/
     ics.js              iCalendar export (unit tested)
     csv.js              Google Calendar CSV export (unit tested)
     pdf.js              One-page image PDF writer (unit tested)
-    calendar-image.js   Draws a calendar view on a canvas for PNG/PDF/print
+    calendar-image.js   Draws a page layout on a canvas for PNG/PDF/print
   ui/                   DOM code, one module per part of the page
     dom.js              Lookups, escaping, toast, modal, downloads, printing
-    fonts.js            Loads calendar fonts from Google Fonts on demand
+    fonts.js            Loads calendar fonts and measures text for the layout
     store.js            App state and change notifications
     term-form.js        Term title and dates
     holidays-panel.js   Automatic and manual holidays
     course-list.js      Course cards and the add/edit form
-    calendar-view.js    On-screen calendar and view tabs
+    calendar-view.js    View tabs and the on-screen page preview (SVG)
     personalize-panel.js Font, size, layout and color settings
     toolbar.js          Exports, save/import, image downloads, status
   app.js                Entry point: initializes every UI module
@@ -69,6 +71,7 @@ tests/                  Node test runner tests for js/core and js/export
 
 - Every script attaches to one global namespace, `TSB`. Scripts load in the order listed in `index.html`, and each one only uses modules loaded before it.
 - `js/core` and `js/export` (except `calendar-image.js`) never touch the DOM, so the tests load them directly in Node.
+- The calendar page is laid out once by `core/page-layout.js`, which returns a list of shapes and text positioned in points. `ui/calendar-view.js` draws that list as SVG for the on-screen preview, and `export/calendar-image.js` draws the same list on a canvas for PNG, PDF and print, so the two match.
 - UI modules read and change `TSB.store.state`. After a change they call `store.markChanged(...topics)`, and each module re-renders when a topic it subscribes to is emitted. `store.js` lists the topics.
 
 ## Deploying to GitHub Pages
