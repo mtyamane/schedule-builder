@@ -5,6 +5,7 @@
   'use strict';
 
   TSB.navigation.init();
+  TSB.paneDivider.init();
   TSB.termForm.init();
   TSB.holidaysPanel.init();
   TSB.courseList.init();

@@ -93,6 +93,7 @@
 
     const frame = byId('calendar');
     frame.dataset.orientation = schedule.style.page.orientation;
+    frame.style.setProperty('--page-aspect', String(layout.width / layout.height));
     frame.innerHTML = layoutSvg(layout, `${schedule.title || 'Class schedule'}, ${VIEWS[viewKey].label}`);
   }
 

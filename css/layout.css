@@ -77,6 +77,11 @@
   gap: 18px;
 }
 
+/* Divider between the panes (desktop only). */
+.pane-divider {
+  display: none;
+}
+
 /* Schedule | Style tabs at the top of the left pane (desktop only). */
 .side-tabs {
   display: none;
@@ -140,11 +145,55 @@ body:not([data-mobile-tab="preview"]) .pane--preview {
     height: 100dvh;
   }
 
+  /*
+   * Left pane | divider | preview. The split starts at half and half;
+   * dragging the divider changes --side-fr and --preview-fr
+   * (see js/ui/pane-divider.js). The minimums keep both panes usable.
+   */
   .workspace {
     flex: 1;
     min-height: 0;
-    grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
+    grid-template-columns: minmax(340px, var(--side-fr, 1fr)) auto minmax(420px, var(--preview-fr, 1fr));
     padding-bottom: 0;
+  }
+
+  .pane-divider {
+    position: relative;
+    display: block;
+    width: 7px;
+    margin-inline: -3px;
+    z-index: 6;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  /* The visible line; it thickens on hover, focus and while dragging. */
+  .pane-divider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: var(--line);
+    transition: background 0.12s, width 0.12s, left 0.12s;
+  }
+
+  .pane-divider:hover::before,
+  .pane-divider:focus-visible::before,
+  .pane-divider.is-dragging::before {
+    left: 2px;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  .pane-divider:focus-visible {
+    outline: none;
+  }
+
+  body.is-resizing {
+    cursor: col-resize;
+    user-select: none;
   }
 
   .pane {
@@ -154,17 +203,24 @@ body:not([data-mobile-tab="preview"]) .pane--preview {
 
   .pane--side {
     padding-top: 0;
-    border-right: 1px solid var(--line);
   }
 
+  /* The preview fills the window height: tabs and note on top, the page in the remaining space. */
   .pane--preview {
+    display: flex;
+    flex-direction: column;
     padding-inline: 24px;
+    padding-bottom: 16px;
+    overflow: hidden;
   }
 
   /* Both panes always show on desktop. */
-  body[data-mobile-tab] .pane--side,
-  body[data-mobile-tab] .pane--preview {
+  body[data-mobile-tab] .pane--side {
     display: block;
+  }
+
+  body[data-mobile-tab] .pane--preview {
+    display: flex;
   }
 
   .mobile-tabs {

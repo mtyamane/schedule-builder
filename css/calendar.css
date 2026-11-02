@@ -63,6 +63,29 @@
   max-width: 640px;
 }
 
+/*
+ * Desktop: show the whole page at once, as large as the space allows.
+ * The scroll area becomes a size container, and the page's width is the
+ * smaller of the available width and the width that fills the available
+ * height (--page-aspect is the page's width / height, set by calendar-view.js).
+ */
+@media (min-width: 960px) {
+  .calendar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    container-type: size;
+    padding: 2px 2px 8px;
+  }
+
+  .page-frame,
+  .page-frame[data-orientation="portrait"] {
+    width: min(100cqw, 100cqh * var(--page-aspect, 1.294));
+    min-width: 0;
+    max-width: none;
+  }
+}
+
 .page-svg {
   display: block;
   width: 100%;

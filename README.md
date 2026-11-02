@@ -9,7 +9,7 @@ A single-page tool for planning a quarter or semester class schedule and getting
 - Export to **iCalendar (.ics)** with weekly repeating events and holidays skipped, or **CSV** in Google Calendar's import format
 - Download any view as a **PNG** or **PDF**, or print it. The on-screen calendar is a live preview of that page
 - Personalize the page: paper size (Letter or A4), orientation, margins, font, exact text sizes in points, block details, header and legend (top, bottom, left, right or off), hours and days shown, block style, grayscale and a colorblind-safe palette
-- Settings on the left (**Schedule** and **Style** tabs) with a live page preview on the right; on phones, a bottom tab bar switches between Schedule, Style and Preview
+- Settings on the left (**Schedule** and **Style** tabs) with a live page preview on the right that always shows the whole page at full window height; drag the divider between them to resize (double-click to reset). On phones, a bottom tab bar switches between Schedule, Style and Preview
 - Click a class on the preview to edit it; overlapping classes are outlined on the preview and flagged in the class list
 - **Undo / redo** (Ctrl+Z / Ctrl+Shift+Z) for every change, including removing a class
 - **Export** menu: iCalendar, CSV, PNG, PDF or print of the current view, or one 3-page PDF with all three views
@@ -62,6 +62,7 @@ js/
     fonts.js            Loads calendar fonts and measures text for the layout
     store.js            App state, undo/redo and change notifications
     navigation.js       Schedule/Style tabs and the phone tab bar
+    pane-divider.js     Draggable divider between the panes (desktop)
     term-form.js        Term title and dates
     holidays-panel.js   Automatic and manual holidays
     course-list.js      Course cards and the add/edit form
