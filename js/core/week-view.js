@@ -96,7 +96,7 @@
         days: undatedDays(),
         events: regularEvents(courses, ALL_DAYS),
         rangeLabel: '',
-        note: 'Add the first day of classes to build week 1. Showing the regular week until then.',
+        note: 'Add the first day of classes to build week 1.',
       };
     }
 
