@@ -6,8 +6,8 @@
 (function (TSB) {
   'use strict';
 
-  const { WEEK_ORDER, WEEKDAYS, MONTH_NAMES, DAY_RANGES } = TSB.constants;
-  const { parseDate, parseTime, addDays, mondayOf, toIsoDate, formatDate, formatHour } = TSB.dates;
+  const { WEEK_ORDERS, WEEKDAYS, DAY_FULL_NAMES, DAY_RANGES } = TSB.constants;
+  const { parseDate, parseTime, addDays, startOfWeek, toIsoDate, formatDate, formatHour, formatShortDate } = TSB.dates;
   const model = TSB.schedule;
 
   const DEFAULT_START_HOUR = 8;
@@ -41,7 +41,11 @@
    * @property {string} note
    */
 
-  const weekLabel = (monday) => `Week of ${MONTH_NAMES[monday.getMonth()]} ${monday.getDate()}`;
+  const styleOf = (schedule) => schedule.style || {};
+  /** Days of the week in display order, by the "Week starts on" setting. */
+  const weekOrder = (schedule) => WEEK_ORDERS[styleOf(schedule).weekStart] || WEEK_ORDERS.monday;
+  /** @returns {string} e.g. "Week of Jan 4", in the page's date format */
+  const weekLabel = (schedule, firstDay) => `Week of ${formatShortDate(firstDay, styleOf(schedule).dateFormat)}`;
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
   function meetingEvent(course, meeting, dayOfWeek) {
@@ -72,7 +76,7 @@
   }
 
   const ALL_DAYS = new Set([0, 1, 2, 3, 4, 5, 6]);
-  const undatedDays = () => WEEK_ORDER.map((dayOfWeek) => ({ dayOfWeek, date: null, offLabel: null }));
+  const undatedDays = (schedule) => weekOrder(schedule).map((dayOfWeek) => ({ dayOfWeek, date: null, offLabel: null }));
 
   function buildRegularWeek(schedule, courses) {
     const termStart = parseDate(schedule.termStart);
@@ -86,26 +90,26 @@
       note = `Repeats weekly from ${formatDate(termStart)} through ${formatDate(termEnd)}`
         + (skipped ? `, skipping ${plural(skipped, 'holiday')}.` : '.');
     }
-    return { days: undatedDays(), events: regularEvents(courses, ALL_DAYS), rangeLabel: '', note };
+    return { days: undatedDays(schedule), events: regularEvents(courses, ALL_DAYS), rangeLabel: '', note };
   }
 
   function buildFirstWeek(schedule, courses) {
     const termStart = parseDate(schedule.termStart);
     if (!termStart) {
       return {
-        days: undatedDays(),
+        days: undatedDays(schedule),
         events: regularEvents(courses, ALL_DAYS),
         rangeLabel: '',
-        note: 'Add the first day of classes to build week 1.',
+        note: 'Add the first day of classes to build week 1. Showing the regular week until then.',
       };
     }
 
     const termEnd = parseDate(schedule.termEnd);
     const holidayNames = new Map(model.allHolidays(schedule).map((h) => [h.date, h.label || 'Holiday']));
-    const monday = mondayOf(termStart);
+    const firstDay = startOfWeek(termStart, styleOf(schedule).weekStart);
 
-    const days = WEEK_ORDER.map((dayOfWeek, index) => {
-      const date = addDays(monday, index);
+    const days = weekOrder(schedule).map((dayOfWeek, index) => {
+      const date = addDays(firstDay, index);
       let offLabel = null;
       if (date < termStart) offLabel = 'Before classes';
       else if (holidayNames.has(toIsoDate(date))) offLabel = holidayNames.get(toIsoDate(date));
@@ -118,30 +122,30 @@
     const holidaysThisWeek = days.filter((d) => d.offLabel && d.date >= termStart && d.offLabel !== 'After term');
 
     let note;
-    if (termStart.getDay() === 1 && !holidaysThisWeek.length) {
-      note = `Classes start on Monday, ${MONTH_NAMES[termStart.getMonth()]} ${termStart.getDate()}, so week 1 matches the regular week.`;
+    if (termStart.getTime() === firstDay.getTime() && !holidaysThisWeek.length) {
+      note = `Classes start on ${DAY_FULL_NAMES[termStart.getDay()]}, ${formatShortDate(termStart)}, so week 1 matches the regular week.`;
     } else {
       note = `Classes start ${formatDate(termStart)}.`;
       if (blockedBefore) note += ` ${plural(blockedBefore, 'weekday')} ${blockedBefore === 1 ? 'is' : 'are'} blocked out before then.`;
       if (holidaysThisWeek.length) note += ` No classes on ${holidaysThisWeek.map((d) => d.offLabel).join(', ')}.`;
     }
 
-    return { days, events: regularEvents(courses, classDays), rangeLabel: weekLabel(monday), note };
+    return { days, events: regularEvents(courses, classDays), rangeLabel: weekLabel(schedule, firstDay), note };
   }
 
   function buildFinalsWeek(schedule, courses) {
-    const monday = model.finalsWeekStart(schedule, courses);
+    const firstDay = model.finalsWeekStart(schedule, courses);
     const withFinals = courses.filter(model.hasValidFinal);
     const events = [];
     const outside = [];
-    let days = undatedDays();
+    let days = undatedDays(schedule);
 
-    if (monday) {
-      days = WEEK_ORDER.map((dayOfWeek, index) => ({ dayOfWeek, date: addDays(monday, index), offLabel: null }));
-      const weekEnd = addDays(monday, 7);
+    if (firstDay) {
+      days = weekOrder(schedule).map((dayOfWeek, index) => ({ dayOfWeek, date: addDays(firstDay, index), offLabel: null }));
+      const weekEnd = addDays(firstDay, 7);
       for (const course of withFinals) {
         const date = parseDate(course.final.date);
-        if (date >= monday && date < weekEnd) {
+        if (date >= firstDay && date < weekEnd) {
           events.push({
             dayOfWeek: date.getDay(),
             start: parseTime(course.final.start),
@@ -165,7 +169,7 @@
         note += ` Outside this week: ${outside.map((c) => `${c.code} (${formatDate(parseDate(c.final.date))})`).join(', ')}.`;
       }
     }
-    return { days, events, rangeLabel: monday ? weekLabel(monday) : '', note };
+    return { days, events, rangeLabel: firstDay ? weekLabel(schedule, firstDay) : '', note };
   }
 
   /**
@@ -245,7 +249,8 @@
     endHour = Math.min(24, Math.max(endHour, startHour + 1));
 
     const usedDays = new Set(allEvents.map((e) => e.dayOfWeek));
-    const days = DAY_RANGES[style.days] || WEEK_ORDER.filter((d) => WEEKDAYS.includes(d) || usedDays.has(d));
+    const chosen = DAY_RANGES[style.days];
+    const days = weekOrder(schedule).filter((d) => (chosen ? chosen.includes(d) : WEEKDAYS.includes(d) || usedDays.has(d)));
     return { startHour, endHour, days, stretched };
   }
 

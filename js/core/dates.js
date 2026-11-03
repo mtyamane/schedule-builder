@@ -8,7 +8,7 @@
 (function (TSB) {
   'use strict';
 
-  const { DAY_NAMES, DAY_LETTERS, MONTH_NAMES, WEEK_ORDER } = TSB.constants;
+  const { DAY_NAMES, DAY_LETTERS, DAY_FULL_NAMES, MONTH_NAMES, WEEK_ORDER } = TSB.constants;
 
   const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -47,6 +47,15 @@
    */
   function mondayOf(date) {
     return addDays(date, -((date.getDay() + 6) % 7));
+  }
+
+  /**
+   * @param {Date} date
+   * @param {'monday'|'sunday'} [weekStart]
+   * @returns {Date} the first day of the week containing `date`
+   */
+  function startOfWeek(date, weekStart = 'monday') {
+    return weekStart === 'sunday' ? addDays(date, -date.getDay()) : mondayOf(date);
   }
 
   /**
@@ -115,6 +124,30 @@
   }
 
   /**
+   * A short date in the chosen style.
+   * @param {Date} date
+   * @param {'short'|'numeric'|'day-month'} [format]
+   * @returns {string} "Jan 5", "1/5" or "5 Jan"
+   */
+  function formatShortDate(date, format = 'short') {
+    if (format === 'numeric') return `${date.getMonth() + 1}/${date.getDate()}`;
+    if (format === 'day-month') return `${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+    return formatMonthDay(date);
+  }
+
+  /**
+   * A day name in the chosen style.
+   * @param {number} day 0 = Sunday
+   * @param {'short'|'long'|'letter'} [format]
+   * @returns {string} "Mon", "Monday" or "M"
+   */
+  function formatDayName(day, format = 'short') {
+    if (format === 'long') return DAY_FULL_NAMES[day];
+    if (format === 'letter') return DAY_LETTERS[day];
+    return DAY_NAMES[day];
+  }
+
+  /**
    * @param {number[]} days day indexes (0 = Sunday)
    * @returns {string} e.g. "MWF" or "TuTh", Monday first
    */
@@ -127,6 +160,7 @@
     toIsoDate,
     addDays,
     mondayOf,
+    startOfWeek,
     parseTime,
     formatTime,
     formatTimeRange,
@@ -134,6 +168,8 @@
     formatHour,
     formatDate,
     formatMonthDay,
+    formatShortDate,
+    formatDayName,
     formatDays,
   });
 })(globalThis.TSB = globalThis.TSB || {});

@@ -8,7 +8,19 @@
   const { formatTimeRange, formatCompactRange } = TSB.dates;
 
   /**
-   * Tag after the course code: "FINAL" for exams, otherwise the section type
+   * The bold first line of a block: the course code, or the course name when
+   * "Course code" is unchecked. Falls back to the code when there's no name.
+   * @param {object} event CalendarEvent
+   * @param {object} style CalendarStyle
+   * @returns {string}
+   */
+  function eventHeading(event, style) {
+    const showCode = style.blockDetails.code !== false;
+    return showCode || !event.course.name ? event.course.code : event.course.name;
+  }
+
+  /**
+   * Tag after the heading: "FINAL" for exams, otherwise the section type
    * when that detail is turned on.
    * @param {object} event CalendarEvent
    * @param {object} style CalendarStyle
@@ -20,7 +32,8 @@
   }
 
   /**
-   * Lines shown under the course code.
+   * Lines shown under the heading. The course name is skipped when it is
+   * already the heading.
    * @param {object} event CalendarEvent
    * @param {object} style CalendarStyle
    * @param {{fullTimes?: boolean}} [options] fullTimes adds AM/PM (used in images)
@@ -29,7 +42,7 @@
   function eventDetailLines(event, style, options = {}) {
     const show = style.blockDetails;
     const lines = [];
-    if (show.name && event.course.name) lines.push(event.course.name);
+    if (show.name && event.course.name && eventHeading(event, style) !== event.course.name) lines.push(event.course.name);
     if (show.time) {
       lines.push(options.fullTimes
         ? formatTimeRange(event.start, event.end, style.clock)
@@ -40,5 +53,5 @@
     return lines;
   }
 
-  TSB.eventText = Object.freeze({ eventTag, eventDetailLines });
+  TSB.eventText = Object.freeze({ eventHeading, eventTag, eventDetailLines });
 })(globalThis.TSB = globalThis.TSB || {});

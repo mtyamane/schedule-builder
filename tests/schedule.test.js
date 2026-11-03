@@ -106,8 +106,8 @@ test('normalizeStyle keeps valid new settings and rejects bad ones', () => {
   assert.equal(style.coursePalette, 'colorblind');
   assert.equal(style.blockColor, 'outline');
   assert.deepEqual(style.header, { subtitle: false, viewLabel: true, weekRange: true });
-  assert.deepEqual(style.legendDetails, { name: true, instructor: false, room: false }); // missing → defaults
-  assert.deepEqual(model.normalizeStyle({ legendDetails: { instructor: true, room: 'yes' } }).legendDetails, { name: true, instructor: true, room: false });
+  assert.deepEqual(style.legendDetails, { code: true, name: true, instructor: false, room: false }); // missing → defaults
+  assert.deepEqual(model.normalizeStyle({ legendDetails: { instructor: true, room: 'yes' } }).legendDetails, { code: true, name: true, instructor: true, room: false });
   assert.equal(style.fontSizes.title, 30);
   assert.equal(style.fontSizes.code, 9.5); // invalid → default
 });

@@ -14,10 +14,16 @@
   /** Short day letters used in compact summaries such as "MWF" or "TuTh". */
   const DAY_LETTERS = ['Su', 'M', 'Tu', 'W', 'Th', 'F', 'Sa'];
 
+  /** Full day names indexed like Date#getDay(). */
+  const DAY_FULL_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   /** Order days are displayed in: Monday first, Sunday last. */
   const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+  /** Day order for the calendar views, by the "Week starts on" setting. */
+  const WEEK_ORDERS = { monday: WEEK_ORDER, sunday: [0, 1, 2, 3, 4, 5, 6] };
 
   /** Days that always appear on the calendar. Weekends appear only when used. */
   const WEEKDAYS = [1, 2, 3, 4, 5];
@@ -129,8 +135,10 @@
   TSB.constants = Object.freeze({
     DAY_NAMES,
     DAY_LETTERS,
+    DAY_FULL_NAMES,
     MONTH_NAMES,
     WEEK_ORDER,
+    WEEK_ORDERS,
     WEEKDAYS,
     ICS_DAY_CODES,
     COURSE_PALETTES,

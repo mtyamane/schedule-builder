@@ -68,11 +68,40 @@
     return null;
   }
 
-  /** @returns {string} e.g. "CSE 143: Computer Programming II (LAB)" */
-  function meetingTitle(course, meeting) {
-    const name = course.name ? `: ${course.name}` : '';
-    const type = model.hasMultipleMeetings(course) ? ` (${meeting.type})` : '';
-    return `${course.code}${name}${type}`;
+  const DEFAULT_TITLES = { format: 'code-name', sectionType: true };
+
+  /**
+   * The course part of an event title, by the "Event titles" setting.
+   * Falls back to the code when the name is empty.
+   * @returns {string} "CSE 143: Computer Programming II", "CSE 143" or "Computer Programming II"
+   */
+  function courseTitle(course, titles = DEFAULT_TITLES) {
+    if (titles.format === 'code' || !course.name) return course.code;
+    if (titles.format === 'name') return course.name;
+    return `${course.code}: ${course.name}`;
+  }
+
+  /**
+   * Calendar event title for a class meeting. The section type is added
+   * only for classes with more than one meeting type, when chosen.
+   * @param {object} course
+   * @param {object} meeting
+   * @param {{format: string, sectionType: boolean}} [titles] the style's eventTitles
+   * @returns {string} e.g. "CSE 143: Computer Programming II (LAB)"
+   */
+  function meetingTitle(course, meeting, titles = DEFAULT_TITLES) {
+    const type = titles.sectionType && model.hasMultipleMeetings(course) ? ` (${meeting.type})` : '';
+    return `${courseTitle(course, titles)}${type}`;
+  }
+
+  /**
+   * Calendar event title for a final exam: the code, or the name when only
+   * names are chosen.
+   * @returns {string} e.g. "CSE 143 Final Exam"
+   */
+  function finalTitle(course, titles = DEFAULT_TITLES) {
+    const label = titles.format === 'name' && course.name ? course.name : course.code;
+    return `${label} Final Exam`;
   }
 
   function courseDescription(course) {
@@ -88,6 +117,7 @@
    */
   function buildIcs(schedule, options = {}) {
     const timeZone = options.timeZone || 'America/Los_Angeles';
+    const titles = (schedule.style && schedule.style.eventTitles) || DEFAULT_TITLES;
     const stamp = formatUtc(options.now || new Date());
     const termStart = parseDate(schedule.termStart);
     const termEnd = parseDate(schedule.termEnd);
@@ -126,7 +156,7 @@
           'BEGIN:VEVENT',
           `UID:${course.id}-${meeting.id}@term-schedule`,
           `DTSTAMP:${stamp}`,
-          `SUMMARY:${escapeText(meetingTitle(course, meeting))}`,
+          `SUMMARY:${escapeText(meetingTitle(course, meeting, titles))}`,
           `DTSTART;TZID=${timeZone}:${formatLocal(first, start)}`,
           `DTEND;TZID=${timeZone}:${formatLocal(first, end)}`,
           `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${until}`,
@@ -147,7 +177,7 @@
           'BEGIN:VEVENT',
           `UID:${course.id}-final@term-schedule`,
           `DTSTAMP:${stamp}`,
-          `SUMMARY:${escapeText(`${course.code} Final Exam`)}`,
+          `SUMMARY:${escapeText(finalTitle(course, titles))}`,
           `DTSTART;TZID=${timeZone}:${formatLocal(date, parseTime(course.final.start))}`,
           `DTEND;TZID=${timeZone}:${formatLocal(date, parseTime(course.final.end))}`,
         );
@@ -161,5 +191,5 @@
     return lines.map(foldLine).join('\r\n') + '\r\n';
   }
 
-  TSB.ics = Object.freeze({ buildIcs, escapeText, foldLine, meetingTitle });
+  TSB.ics = Object.freeze({ buildIcs, escapeText, foldLine, meetingTitle, finalTitle });
 })(globalThis.TSB = globalThis.TSB || {});

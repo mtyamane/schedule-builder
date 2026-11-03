@@ -116,11 +116,11 @@
           <div class="field-row">
             <label class="field">First day of classes<input type="date" id="term-start"></label>
             <label class="field">Last day of instruction<input type="date" id="term-end"></label>
-            <label class="field">First day of finals week (optional)<input type="date" id="term-finals"></label>
+            <label class="field">Finals week begins (optional)<input type="date" id="term-finals"></label>
           </div>
           <p class="hint">If classes start midweek, week 1 blocks out the days before. Finals week uses the date above, or the week of your earliest final.</p>
 
-          <div class="section-head"><span class="eyebrow">Holidays<span class="sep">|</span>no classes</span></div>
+          <div class="section-head"><span class="eyebrow">Holidays<span class="sep">|</span>(no classes)</span></div>
           <div class="auto-holidays">
             <label class="checkbox"><input type="checkbox" id="auto-holidays"> Add common holidays automatically</label>
             <select id="holiday-region" aria-label="Holiday location">
@@ -212,6 +212,7 @@
             <summary><span>Class blocks</span><span class="style-section__value" id="summary-blocks"></span></summary>
             <div class="style-section__body">
               <div class="toggle-chips">
+                <label class="toggle-chip"><input type="checkbox" id="detail-code" data-detail="code"> Course code</label>
                 <label class="toggle-chip"><input type="checkbox" id="detail-name" data-detail="name"> Course name</label>
                 <label class="toggle-chip"><input type="checkbox" id="detail-time" data-detail="time"> Time</label>
                 <label class="toggle-chip"><input type="checkbox" id="detail-room" data-detail="room"> Room</label>
@@ -222,7 +223,7 @@
                 <span>Corners</span>
                 <div class="segmented" data-setting="corners"><button data-value="rounded">Rounded</button><button data-value="square">Square</button></div>
               </div>
-              <p class="hint">The course code always shows. Section types appear only for classes with more than one meeting type. Details that don't fit in a short block are left off.</p>
+              <p class="hint">With Course code unchecked, the course name leads each block. Section types appear only for classes with more than one meeting type. Details that don't fit in a short block are left off.</p>
             </div>
           </details>
 
@@ -235,14 +236,32 @@
                 <label class="toggle-chip"><input type="checkbox" id="header-weekRange" data-header="weekRange"> Week range</label>
               </div>
               <div class="option-row">
+                <span>Title</span>
+                <div class="segmented" data-setting="titleAlign"><button data-value="left">Left</button><button data-value="center">Centered</button></div>
+              </div>
+              <div class="option-row">
                 <span>Legend</span>
                 <div class="segmented" data-setting="legend"><button data-value="top">Top</button><button data-value="bottom">Bottom</button><button data-value="left">Left</button><button data-value="right">Right</button><button data-value="off">Off</button></div>
               </div>
+              <div class="option-row" id="legend-details-row">
+                <span>Legend shows</span>
+                <div class="toggle-chips">
+                  <label class="toggle-chip"><input type="checkbox" id="legend-code" data-legend-detail="code"> Course code</label>
+                  <label class="toggle-chip"><input type="checkbox" id="legend-name" data-legend-detail="name"> Course name</label>
+                  <label class="toggle-chip"><input type="checkbox" id="legend-instructor" data-legend-detail="instructor"> Instructor</label>
+                  <label class="toggle-chip"><input type="checkbox" id="legend-room" data-legend-detail="room"> Room</label>
+                </div>
+              </div>
+              <div class="option-row" id="legend-order-row">
+                <span>Legend order</span>
+                <div class="segmented" data-setting="legendOrder"><button data-value="entered">As entered</button><button data-value="code">Course code</button><button data-value="time">First class</button></div>
+              </div>
+              <p class="hint" id="legend-details-hint">Room is the main meeting's room. With nothing checked, the legend shows only the color swatches. "First class" lists classes by their first meeting of the week.</p>
             </div>
           </details>
 
           <details class="style-section">
-            <summary><span>Hours and days</span><span class="style-section__value" id="summary-hours"></span></summary>
+            <summary><span>Days and time</span><span class="style-section__value" id="summary-hours"></span></summary>
             <div class="style-section__body">
               <div class="option-row">
                 <span>Hours</span>
@@ -257,8 +276,24 @@
                 <div class="segmented" data-setting="days"><button data-value="auto">Auto</button><button data-value="weekdays">Mon–Fri</button><button data-value="mon-sat">Mon–Sat</button><button data-value="all">Every day</button></div>
               </div>
               <div class="option-row">
+                <span>Week starts on</span>
+                <div class="segmented" data-setting="weekStart"><button data-value="monday">Monday</button><button data-value="sunday">Sunday</button></div>
+              </div>
+              <div class="option-row">
+                <span>Day names</span>
+                <div class="segmented" data-setting="dayFormat"><button data-value="short">Mon</button><button data-value="long">Monday</button><button data-value="letter">M</button></div>
+              </div>
+              <div class="option-row">
+                <span>Dates</span>
+                <div class="segmented" data-setting="dateFormat"><button data-value="short">Jan 4</button><button data-value="numeric">1/4</button><button data-value="day-month">4 Jan</button></div>
+              </div>
+              <div class="option-row">
                 <span>Time format</span>
                 <div class="segmented" data-setting="clock"><button data-value="12">12-hour</button><button data-value="24">24-hour</button></div>
+              </div>
+              <div class="toggle-chips">
+                <label class="toggle-chip"><input type="checkbox" id="flag-halfHourLines" data-style-flag="halfHourLines"> Half-hour lines</label>
+                <label class="toggle-chip"><input type="checkbox" id="flag-stripeOffDays" data-style-flag="stripeOffDays"> Stripe days with no classes</label>
               </div>
               <p class="hint">All three views use the same hours and days so they line up. Auto fits every class. A class outside the hours you pick stretches the range so it still shows.</p>
             </div>
@@ -277,6 +312,18 @@
               </div>
               <label class="checkbox"><input type="checkbox" id="style-grayscale"> Grayscale, for black-and-white printers</label>
               <p class="hint">Outline uses the least ink. Switching course colors recolors classes that use a palette color and keeps custom colors.</p>
+            </div>
+          </details>
+
+          <details class="style-section">
+            <summary><span>Calendar app events</span><span class="style-section__value" id="summary-events"></span></summary>
+            <div class="style-section__body">
+              <div class="option-row">
+                <span>Event titles</span>
+                <div class="segmented" data-setting="eventTitles.format"><button data-value="code-name">Code + name</button><button data-value="code">Code</button><button data-value="name">Name</button></div>
+              </div>
+              <label class="toggle-chip"><input type="checkbox" id="flag-eventSectionType" data-style-flag="eventTitles.sectionType"> Add section type, like (LEC) or (LAB)</label>
+              <p class="hint">How classes are named in the iCalendar and CSV exports. Example: <span id="event-title-example"></span></p>
             </div>
           </details>
         </div>

@@ -10,10 +10,10 @@
 (function (TSB) {
   'use strict';
 
-  const { DAY_NAMES, VIEWS, SEPARATOR, PAPER_SIZES, PAGE_MARGINS } = TSB.constants;
-  const { formatHour, formatMonthDay, formatTimeRange } = TSB.dates;
+  const { VIEWS, SEPARATOR, PAPER_SIZES, PAGE_MARGINS } = TSB.constants;
+  const { formatHour, formatShortDate, formatDayName, formatTimeRange } = TSB.dates;
   const { buildWeekView } = TSB.weekView;
-  const { eventTag, eventDetailLines } = TSB.eventText;
+  const { eventHeading, eventTag, eventDetailLines } = TSB.eventText;
   const { pagePalette, displayColor, blockColors } = TSB.pageTheme;
   const { findFont } = TSB.schedule;
 
@@ -84,6 +84,31 @@
   }
 
   /**
+   * Courses that appear in a view, in legend order:
+   * 'entered' keeps the class list's order, 'code' sorts by course code
+   * (so "CSE 143" comes before "CSE 1430"), and 'time' sorts by each
+   * course's first class of the displayed week.
+   * @param {object[]} courses
+   * @param {object} view WeekView
+   * @param {'entered'|'code'|'time'} order
+   * @returns {object[]}
+   */
+  function orderLegendCourses(courses, view, order) {
+    const shown = courses.filter((course) => view.events.some((e) => e.course === course));
+    if (order === 'code') {
+      return [...shown].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' }));
+    }
+    if (order === 'time') {
+      const dayIndex = new Map(view.days.map((d, i) => [d.dayOfWeek, i]));
+      const firstClass = (course) => Math.min(...view.events
+        .filter((e) => e.course === course)
+        .map((e) => dayIndex.get(e.dayOfWeek) * 24 * 60 + e.start));
+      return [...shown].sort((a, b) => firstClass(a) - firstClass(b));
+    }
+    return shown;
+  }
+
+  /**
    * @param {object} schedule
    * @param {'week1'|'weekly'|'finals'} viewKey
    * @param {object[]} courses courses to draw (may include an editing preview)
@@ -121,17 +146,23 @@
       metaBottom = metaBaseline + metaSize * 0.25;
     });
 
-    const titleMaxWidth = contentWidth - (metaWidth ? metaWidth + 24 : 0);
+    // A centered title keeps clear of the view label on both sides, so it stays centered on the page.
+    const centered = style.titleAlign === 'center';
+    const metaSpace = metaWidth ? metaWidth + 24 : 0;
+    const titleMaxWidth = contentWidth - (centered ? 2 * metaSpace : metaSpace);
+    const titleX = (width) => (centered ? margin + (contentWidth - width) / 2 : margin);
     const titleSize = sizes.title;
     const titleBaseline = margin + titleSize * 0.82;
-    const title = truncate(schedule.title || 'Class schedule', titleMaxWidth, widthFn(titleSize, font.titleWeight, 'title'));
-    items.push(text(margin, titleBaseline, title, titleSize, font.titleWeight, 'title', palette.ink));
+    const titleWidthOf = widthFn(titleSize, font.titleWeight, 'title');
+    const title = truncate(schedule.title || 'Class schedule', titleMaxWidth, titleWidthOf);
+    items.push(text(titleX(titleWidthOf(title)), titleBaseline, title, titleSize, font.titleWeight, 'title', palette.ink));
     let titleBottom = titleBaseline + titleSize * 0.22;
 
     if (style.header.subtitle && schedule.subtitle) {
       const subtitleBaseline = titleBottom + sizes.subtitle * 1.05;
-      const subtitle = truncate(schedule.subtitle, titleMaxWidth, widthFn(sizes.subtitle, 400, 'body'));
-      items.push(text(margin, subtitleBaseline, subtitle, sizes.subtitle, 400, 'body', palette.muted));
+      const subtitleWidthOf = widthFn(sizes.subtitle, 400, 'body');
+      const subtitle = truncate(schedule.subtitle, titleMaxWidth, subtitleWidthOf);
+      items.push(text(titleX(subtitleWidthOf(subtitle)), subtitleBaseline, subtitle, sizes.subtitle, 400, 'body', palette.muted));
       titleBottom = subtitleBaseline + sizes.subtitle * 0.25;
     }
     const headerBottom = Math.max(titleBottom, metaBottom) + HEADER_GAP;
@@ -141,19 +172,22 @@
     const legendSize = sizes.legend;
     const swatch = legendSize * 0.95;
     const swatchGap = legendSize * 0.5;
-    const legendCourses = [...new Map(view.events.map((e) => [e.course.id, e.course])).values()];
+    const legendCourses = orderLegendCourses(courses, view, style.legendOrder);
     /**
-     * Legend text for a course: the code (plus name, if chosen) first, then
-     * the instructor and the main meeting's room, if chosen and filled in.
+     * Legend text for a course, by the "Legend shows" checkboxes:
+     * `title` is the code and/or name (empty when both are off), `extras` the
+     * instructor and the main meeting's room. With nothing chosen, the
+     * entry is just its color swatch.
      */
     const legendParts = (course) => {
       const show = style.legendDetails;
       const room = course.meetings[0] && course.meetings[0].location;
-      return [
-        `${course.code}${show.name && course.name ? ` ${course.name}` : ''}`,
-        show.instructor && course.instructor,
-        show.room && room,
-      ].filter(Boolean);
+      const title = [show.code && course.code, show.name && course.name].filter(Boolean).join(' ');
+      return { title, extras: [show.instructor && course.instructor, show.room && room].filter(Boolean) };
+    };
+    const legendTexts = (course) => {
+      const { title, extras } = legendParts(course);
+      return [title, ...extras].filter(Boolean);
     };
     const legendWidthOf = widthFn(legendSize, 400, 'body');
     const legendItems = [];
@@ -168,8 +202,9 @@
       let x = margin;
       let row = 0;
       for (const course of legendCourses) {
-        const label = truncate(legendParts(course).join(SEPARATOR), contentWidth - swatch - swatchGap, legendWidthOf);
-        const itemWidth = swatch + swatchGap + legendWidthOf(label);
+        const joined = legendTexts(course).join(SEPARATOR);
+        const label = joined ? truncate(joined, contentWidth - swatch - swatchGap, legendWidthOf) : '';
+        const itemWidth = swatch + (label ? swatchGap + legendWidthOf(label) : 0);
         if (x + itemWidth > margin + contentWidth && x > margin) {
           row++;
           x = margin;
@@ -186,13 +221,13 @@
         item.y = firstBaseline + item.row * rowHeight;
       });
     } else if (isColumnLegend && legendCourses.length) {
-      const widest = Math.max(...legendCourses.flatMap((c) => legendParts(c).map(legendWidthOf)));
-      legendColumnWidth = Math.min(swatch + swatchGap + widest, contentWidth * 0.26);
+      const widest = Math.max(0, ...legendCourses.flatMap((c) => legendTexts(c).map(legendWidthOf)));
+      legendColumnWidth = Math.min(swatch + (widest ? swatchGap + widest : 0), contentWidth * 0.26);
       const textWidth = legendColumnWidth - swatch - swatchGap;
       for (const course of legendCourses) {
-        // First line(s): code and name. Then one muted line each for instructor and room.
-        const [first, ...extras] = legendParts(course);
-        const lines = wrap(first, textWidth, legendWidthOf);
+        // First line(s): code and/or name. Then one muted line each for instructor and room.
+        const { title, extras } = legendParts(course);
+        const lines = title ? wrap(title, textWidth, legendWidthOf) : [];
         const mutedFrom = lines.length;
         extras.forEach((extra) => lines.push(truncate(extra, textWidth, legendWidthOf)));
         const x = style.legend === 'left' ? margin : margin + contentWidth - legendColumnWidth;
@@ -231,14 +266,17 @@
 
     view.days.forEach((day, i) => {
       if (day.offLabel) {
-        items.push({ type: 'hatch', x: columnX(i), y: bodyTop, w: columnWidth, h: bodyBottom - bodyTop, fill: palette.offDay, color: palette.hatch, spacing: 9 });
+        const area = { x: columnX(i), y: bodyTop, w: columnWidth, h: bodyBottom - bodyTop };
+        items.push(style.stripeOffDays === false
+          ? { type: 'rect', ...area, fill: palette.offDay }
+          : { type: 'hatch', ...area, fill: palette.offDay, color: palette.hatch, spacing: 9 });
       }
     });
 
     for (let h = 0; h <= hours; h++) {
       const y = bodyTop + h * hourHeight;
       items.push({ type: 'line', x1: columnsLeft, y1: y, x2: gridRight, y2: y, color: h === 0 ? palette.line : palette.grid, width: LINE_WIDTH });
-      if (h < hours) {
+      if (h < hours && style.halfHourLines !== false) {
         const half = y + hourHeight / 2;
         items.push({ type: 'line', x1: columnsLeft, y1: half, x2: gridRight, y2: half, color: palette.halfHour, width: LINE_WIDTH });
       }
@@ -253,11 +291,11 @@
 
     view.days.forEach((day, i) => {
       const center = columnX(i) + columnWidth / 2;
-      const name = DAY_NAMES[day.dayOfWeek];
+      const name = formatDayName(day.dayOfWeek, style.dayFormat);
       const nameWidth = measure(name, daySize, font.titleWeight, 'title');
       items.push(text(center - nameWidth / 2, dayNameBaseline, name, daySize, font.titleWeight, 'title', day.offLabel ? palette.muted : palette.ink));
       if (day.date) {
-        const date = formatMonthDay(day.date);
+        const date = formatShortDate(day.date, style.dateFormat);
         const dateWidth = measure(date, dateSize, 400, 'code');
         items.push(text(center - dateWidth / 2, dayDateBaseline, date, dateSize, 400, 'code', palette.muted));
       }
@@ -295,13 +333,15 @@
       const bottomLimit = y + h - 1.5;
       let baseline = y + BLOCK_PADDING_TOP + codeSize * 0.85;
 
+      // Bold first line: the course code, or the name when "Course code" is off.
       const tag = eventTag(event, style);
+      const heading = eventHeading(event, style);
       const code = event.course.code;
-      if (tag && codeWidthOf(`${code}  ${tag}`) <= maxWidth) {
-        children.push(text(textX, baseline, code, codeSize, font.codeWeight, 'code', colors.text));
-        children.push(text(textX + codeWidthOf(`${code}  `), baseline, tag, codeSize, font.codeWeight, 'code', colors.text, { opacity: 0.7 }));
+      if (tag && codeWidthOf(`${heading}  ${tag}`) <= maxWidth) {
+        children.push(text(textX, baseline, heading, codeSize, font.codeWeight, 'code', colors.text));
+        children.push(text(textX + codeWidthOf(`${heading}  `), baseline, tag, codeSize, font.codeWeight, 'code', colors.text, { opacity: 0.7 }));
       } else {
-        wrap(tag ? `${code}  ${tag}` : code, maxWidth, codeWidthOf).slice(0, 2).forEach((line, i) => {
+        wrap(tag ? `${heading}  ${tag}` : heading, maxWidth, codeWidthOf).slice(0, 2).forEach((line, i) => {
           if (i > 0) baseline += codeSize * 1.15;
           children.push(text(textX, baseline, line, codeSize, font.codeWeight, 'code', colors.text));
         });
@@ -354,9 +394,9 @@
 
       const textX = item.x + swatch + swatchGap;
       if (isRowLegend) {
-        // Draw the separator in the muted color.
+        // Draw the separator in the muted color. An empty label means color only.
         let x = textX;
-        const parts = item.lines[0].split(SEPARATOR);
+        const parts = item.lines[0] ? item.lines[0].split(SEPARATOR) : [];
         parts.forEach((part, i) => {
           if (i > 0) {
             items.push(text(x, item.y, SEPARATOR, legendSize, 400, 'body', palette.muted));
@@ -370,7 +410,7 @@
           const color = i >= item.mutedFrom ? palette.muted : palette.ink;
           items.push(text(textX, columnLegendY + legendSize * 0.82 + i * legendSize * 1.3, line, legendSize, 400, 'body', color));
         });
-        columnLegendY += item.lines.length * legendSize * 1.3 + legendSize * 0.7;
+        columnLegendY += Math.max(1, item.lines.length) * legendSize * 1.3 + legendSize * 0.7; // a color-only entry still takes one line
       }
     }
 
@@ -386,5 +426,5 @@
     };
   }
 
-  TSB.pageLayout = Object.freeze({ buildPageLayout, pageSize, wrap, truncate });
+  TSB.pageLayout = Object.freeze({ buildPageLayout, orderLegendCourses, pageSize, wrap, truncate });
 })(globalThis.TSB = globalThis.TSB || {});

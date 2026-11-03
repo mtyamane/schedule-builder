@@ -110,6 +110,23 @@ test('the ics series produce exactly the same class meetings as the CSV', () => 
   assert.deepEqual(fromIcs, fromCsv);
 });
 
+test('event titles follow the chosen format, in the ics and the CSV', () => {
+  const schedule = oneCourseSchedule();
+  schedule.courses[0].meetings.push({ id: 'm2', type: 'LAB', days: [4], start: '10:30', end: '11:20', location: '' });
+  const titles = () => {
+    const output = ics(schedule);
+    return [...output.matchAll(/^SUMMARY:(.*)$/gm)].map((m) => m[1].replace(/\r$/, ''));
+  };
+  assert.deepEqual(titles(), ['CSE 143: Computer Programming II (LEC)', 'CSE 143: Computer Programming II (LAB)', 'CSE 143 Final Exam']);
+
+  schedule.style.eventTitles = { format: 'code', sectionType: false };
+  assert.deepEqual(titles(), ['CSE 143', 'CSE 143', 'CSE 143 Final Exam']);
+
+  schedule.style.eventTitles = { format: 'name', sectionType: true };
+  assert.deepEqual(titles(), ['Computer Programming II (LEC)', 'Computer Programming II (LAB)', 'Computer Programming II Final Exam']);
+  assert.match(buildGoogleCsv(schedule), /^"Computer Programming II \(LAB\)","01\/07\/2027"/m);
+});
+
 /* ---------- CSV ---------- */
 
 test('csv lists every meeting with Google Calendar headers', () => {

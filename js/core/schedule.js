@@ -6,7 +6,7 @@
   'use strict';
 
   const { COURSE_COLORS, COURSE_PALETTES, FONTS, REGIONS, FONT_SIZE_ELEMENTS, SIZE_PRESET_FACTORS, presetFontSizes, PAPER_SIZES, PAGE_MARGINS, DAY_RANGES } = TSB.constants;
-  const { parseDate, parseTime, addDays, mondayOf } = TSB.dates;
+  const { parseDate, parseTime, addDays, startOfWeek } = TSB.dates;
   const { holidaysForRegion } = TSB.holidays;
   const { isHexColor } = TSB.color;
 
@@ -44,10 +44,10 @@
    * @typedef {Object} CalendarStyle  How the calendar page looks, on screen and in exports.
    * @property {string} font        id from TSB.constants.FONTS
    * @property {Object<string, number>} fontSizes  point sizes keyed by TSB.constants.FONT_SIZE_ELEMENTS
-   * @property {{name: boolean, time: boolean, room: boolean, instructor: boolean, type: boolean}} blockDetails
+   * @property {{code: boolean, name: boolean, time: boolean, room: boolean, instructor: boolean, type: boolean}} blockDetails
    * @property {{subtitle: boolean, viewLabel: boolean, weekRange: boolean}} header  which header items show
    * @property {'top'|'bottom'|'left'|'right'|'off'} legend
-   * @property {{name: boolean, instructor: boolean, room: boolean}} legendDetails  what each legend entry shows after the course code
+   * @property {{code: boolean, name: boolean, instructor: boolean, room: boolean}} legendDetails  what each legend entry shows (all off: color only)
    * @property {{paper: 'letter'|'a4', orientation: 'landscape'|'portrait', margins: 'narrow'|'normal'|'wide'}} page
    * @property {number|null} hourStart  first hour shown (0–23), or null for automatic
    * @property {number|null} hourEnd    last hour shown (1–24), or null for automatic
@@ -58,6 +58,14 @@
    * @property {boolean} grayscale     draw course colors in gray, for black-and-white printing
    * @property {'standard'|'colorblind'} coursePalette
    * @property {'white'|'tint'|'dark'} pageBackground
+   * @property {'left'|'center'} titleAlign      page title and subtitle alignment
+   * @property {'entered'|'code'|'time'} legendOrder  as entered, by course code, or by first class of the week
+   * @property {'monday'|'sunday'} weekStart
+   * @property {'short'|'long'|'letter'} dayFormat   day headers: "Mon", "Monday" or "M"
+   * @property {'short'|'numeric'|'day-month'} dateFormat  dates on the page: "Jan 4", "1/4" or "4 Jan"
+   * @property {boolean} halfHourLines   draw a faint line at each half hour
+   * @property {boolean} stripeOffDays   stripe days with no classes (otherwise just shade them)
+   * @property {{format: 'code-name'|'code'|'name', sectionType: boolean}} eventTitles  event names in .ics and CSV exports
    *
    * @typedef {Object} Schedule
    * @property {string} title
@@ -86,20 +94,28 @@
     return {
       font: 'clean',
       fontSizes: presetFontSizes('M'),
-      blockDetails: { name: false, time: true, room: true, instructor: false, type: true },
+      blockDetails: { code: true, name: false, time: true, room: true, instructor: false, type: true },
       header: { subtitle: true, viewLabel: true, weekRange: true },
+      titleAlign: 'left',
       legend: 'bottom',
-      legendDetails: { name: true, instructor: false, room: false },
+      legendDetails: { code: true, name: true, instructor: false, room: false },
+      legendOrder: 'entered',
       page: { paper: 'letter', orientation: 'landscape', margins: 'normal' },
       hourStart: null,
       hourEnd: null,
       days: 'auto',
+      weekStart: 'monday',
+      dayFormat: 'short',
+      dateFormat: 'short',
+      halfHourLines: true,
+      stripeOffDays: true,
       clock: '12',
       corners: 'rounded',
       blockColor: 'soft',
       grayscale: false,
       coursePalette: 'standard',
       pageBackground: 'white',
+      eventTitles: { format: 'code-name', sectionType: true },
     };
   }
 
@@ -351,22 +367,24 @@
   }
 
   /**
-   * Monday of finals week: the explicit finals date, else the week of the
-   * earliest final, else the week after instruction ends.
+   * First day of finals week (Monday or Sunday, by the week-start setting):
+   * the week of the explicit finals date, else the week of the earliest
+   * final, else the week after instruction ends.
    * @param {Schedule} schedule
    * @param {Course[]} [courses]
    * @returns {Date|null}
    */
   function finalsWeekStart(schedule, courses = schedule.courses) {
+    const weekStart = (schedule.style && schedule.style.weekStart) || 'monday';
     const explicit = parseDate(schedule.finalsStart);
-    if (explicit) return mondayOf(explicit);
+    if (explicit) return startOfWeek(explicit, weekStart);
     const finalDates = courses
       .filter((course) => course.final && parseDate(course.final.date))
       .map((course) => parseDate(course.final.date))
       .sort((a, b) => a - b);
-    if (finalDates.length) return mondayOf(finalDates[0]);
+    if (finalDates.length) return startOfWeek(finalDates[0], weekStart);
     const termEnd = parseDate(schedule.termEnd);
-    return termEnd ? addDays(mondayOf(termEnd), 7) : null;
+    return termEnd ? addDays(startOfWeek(termEnd, weekStart), 7) : null;
   }
 
   /**
@@ -465,6 +483,17 @@
       hourStart: hour(raw.hourStart, 0, 23),
       hourEnd: hour(raw.hourEnd, 1, 24),
       days: pickOne(raw.days, Object.keys(DAY_RANGES), 'auto'),
+      weekStart: pickOne(raw.weekStart, ['monday', 'sunday'], 'monday'),
+      dayFormat: pickOne(raw.dayFormat, ['short', 'long', 'letter'], 'short'),
+      dateFormat: pickOne(raw.dateFormat, ['short', 'numeric', 'day-month'], 'short'),
+      halfHourLines: boolOr(raw.halfHourLines, true),
+      stripeOffDays: boolOr(raw.stripeOffDays, true),
+      titleAlign: pickOne(raw.titleAlign, ['left', 'center'], 'left'),
+      legendOrder: pickOne(raw.legendOrder, ['entered', 'code', 'time'], 'entered'),
+      eventTitles: {
+        format: pickOne((raw.eventTitles || {}).format, ['code-name', 'code', 'name'], 'code-name'),
+        sectionType: boolOr((raw.eventTitles || {}).sectionType, true),
+      },
       clock: pickOne(String(raw.clock), ['12', '24'], '12'),
       corners: pickOne(raw.corners, ['rounded', 'square'], 'rounded'),
       blockColor: pickOne(raw.blockColor || raw.blockStyle, ['soft', 'bold', 'outline'], 'soft'),

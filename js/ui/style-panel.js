@@ -60,7 +60,21 @@
 
   const PRESET_NAMES = { S: 'Small', M: 'Medium', L: 'Large', XL: 'Extra large' };
   const DAY_NAMES = { auto: 'Auto days', weekdays: 'Mon–Fri', 'mon-sat': 'Mon–Sat', all: 'Every day' };
-  const DETAIL_NAMES = { name: 'Name', time: 'Time', room: 'Room', instructor: 'Instructor', type: 'Type' };
+  const DETAIL_NAMES = { code: 'Code', name: 'Name', time: 'Time', room: 'Room', instructor: 'Instructor', type: 'Type' };
+  const LEGEND_ORDER_NAMES = { entered: 'as entered', code: 'by code', time: 'by first class' };
+
+  /** A sample course for the event-title example when there are no classes yet. */
+  const SAMPLE_COURSE = {
+    code: 'CSE 143',
+    name: 'Computer Programming II',
+    meetings: [{ type: 'LEC' }, { type: 'LAB' }],
+  };
+
+  /** The event title of the first class, as it will appear in calendar apps. */
+  function eventTitleExample() {
+    const course = store.state.schedule.courses[0] || SAMPLE_COURSE;
+    return TSB.ics.meetingTitle(course, course.meetings[0] || { type: 'LEC' }, style().eventTitles);
+  }
   const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
   /** One-line summaries shown in each section heading. */
@@ -74,13 +88,17 @@
     const preset = model.matchingSizePreset(s.fontSizes);
     set('summary-sizes', [preset ? PRESET_NAMES[preset] : 'Custom', `Title ${s.fontSizes.title} pt`]);
     const shown = Object.entries(s.blockDetails).filter(([, on]) => on).map(([key]) => DETAIL_NAMES[key]);
-    set('summary-blocks', [shown.length ? shown.join(', ') : 'Code only']);
-    const legendExtras = ['instructor', 'room'].filter((key) => s.legendDetails[key]).map((key) => capitalize(key));
-    set('summary-header', s.legend === 'off' ? ['No legend'] : [`Legend ${s.legend}`, ...legendExtras]);
+    set('summary-blocks', [shown.length ? shown.join(', ') : 'Course code']);
+    const legendShows = Object.entries(s.legendDetails).filter(([, on]) => on).map(([key]) => DETAIL_NAMES[key]);
+    set('summary-header', s.legend === 'off'
+      ? ['No legend']
+      : [`Legend ${s.legend}`, legendShows.length ? legendShows.join(', ') : 'Colors only', LEGEND_ORDER_NAMES[s.legendOrder]]);
+    set('summary-events', [eventTitleExample()]);
+    byId('event-title-example').textContent = eventTitleExample();
     const hours = s.hourStart === null && s.hourEnd === null
       ? 'Auto hours'
       : `${s.hourStart === null ? 'Auto' : formatHour(s.hourStart, s.clock)}–${s.hourEnd === null ? 'Auto' : formatHour(s.hourEnd, s.clock)}`;
-    set('summary-hours', [hours, DAY_NAMES[s.days]]);
+    set('summary-hours', [hours, DAY_NAMES[s.days], s.weekStart === 'sunday' ? 'Sunday start' : 'Monday start']);
     set('summary-colors', [capitalize(s.blockColor), s.coursePalette === 'colorblind' ? 'Colorblind-safe' : 'Standard', s.grayscale && 'Grayscale']);
   }
 
@@ -106,7 +124,12 @@
     for (const [key, shown] of Object.entries(current.legendDetails)) byId(`legend-${key}`).checked = shown;
     // Legend details only matter when there is a legend.
     byId('legend-details-row').hidden = current.legend === 'off';
+    byId('legend-order-row').hidden = current.legend === 'off';
     byId('legend-details-hint').hidden = current.legend === 'off';
+    // On/off settings, including nested ones like "eventTitles.sectionType".
+    document.querySelectorAll('#style-panel [data-style-flag]').forEach((box) => {
+      box.checked = Boolean(getSetting(box.dataset.styleFlag));
+    });
     byId('style-grayscale').checked = current.grayscale;
 
     byId('hour-start').innerHTML = hourOptionsHtml(current.hourStart, 0, 23, current.clock);
@@ -159,7 +182,7 @@
   /** While typing a size, update the calendar but leave the field alone. */
   function onInput(event) {
     const target = event.target;
-    const { fontSize, detail, header, legendDetail } = target.dataset;
+    const { fontSize, detail, header, legendDetail, styleFlag } = target.dataset;
 
     if (fontSize) {
       const value = model.clampFontSize(fontSize, target.value);
@@ -170,6 +193,10 @@
       store.markChanged('calendar');
     } else if (detail) {
       style().blockDetails[detail] = target.checked;
+      renderSummaries();
+      store.markChanged('calendar');
+    } else if (styleFlag) {
+      setSetting(styleFlag, target.checked);
       renderSummaries();
       store.markChanged('calendar');
     } else if (legendDetail) {
@@ -232,6 +259,7 @@
     panel.addEventListener('change', onChange);
     byId('reset-style').addEventListener('click', resetAll);
     store.subscribe('style', render);
+    store.subscribe('courses', renderSummaries); // the event-title example uses the first class
   }
 
   TSB.stylePanel = Object.freeze({ init });

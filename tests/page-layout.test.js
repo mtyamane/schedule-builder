@@ -136,10 +136,18 @@ test('legend shows course name, instructor and room only when chosen', () => {
 
   assert.equal(legendLines(), 'CSE 143 Computer Programming II'); // defaults: name on, instructor and room off
 
-  schedule.style.legendDetails = { name: false, instructor: false, room: false };
+  schedule.style.legendDetails = { code: true, name: false, instructor: false, room: false };
   assert.equal(legendLines(), 'CSE 143');
 
-  schedule.style.legendDetails = { name: true, instructor: true, room: true };
+  schedule.style.legendDetails = { code: false, name: true, instructor: false, room: false };
+  assert.equal(legendLines(), 'Computer Programming II');
+
+  schedule.style.legendDetails = { code: false, name: false, instructor: false, room: false };
+  assert.equal(legendLines(), ''); // color swatch only
+  const swatches = layoutOf(schedule).items.filter((i) => i.type === 'rect' && i.fill === '#3b5bdb' && i.w < 12);
+  assert.equal(swatches.length, 1);
+
+  schedule.style.legendDetails = { code: true, name: true, instructor: true, room: true };
   assert.equal(legendLines(), 'CSE 143 Computer Programming II | Prof. Lin | Kane Hall 130');
 
   // Column legends put the instructor and room on their own muted lines.
@@ -149,6 +157,65 @@ test('legend shows course name, instructor and room only when chosen', () => {
   const palette = TSB.pageTheme.pagePalette(schedule.style);
   assert.equal(texts.find((t) => t.text === 'Prof. Lin').color, palette.muted);
   assert.equal(texts.find((t) => t.text === 'Kane Hall 130' && t.color === palette.muted).text, 'Kane Hall 130');
+});
+
+test('legend order: as entered, by course code, or by first class of the week', () => {
+  const schedule = oneCourseSchedule();
+  const base = schedule.courses[0];
+  const course = (id, code, days, start) => ({ ...base, id, code, final: null, meetings: [{ id: `m-${id}`, type: 'LEC', days, start, end: `${String(Number(start.slice(0, 2)) + 1).padStart(2, '0')}:00`, location: '' }] });
+  schedule.courses = [course('a', 'MATH 126', [3], '08:00'), course('b', 'CSE 1430', [1], '13:00'), course('c', 'CSE 143', [1], '09:00')];
+  const view = buildWeekView(schedule, 'weekly');
+  const codes = (order) => TSB.pageLayout.orderLegendCourses(schedule.courses, view, order).map((c) => c.code);
+  assert.deepEqual(codes('entered'), ['MATH 126', 'CSE 1430', 'CSE 143']);
+  assert.deepEqual(codes('code'), ['CSE 143', 'CSE 1430', 'MATH 126']);
+  assert.deepEqual(codes('time'), ['CSE 143', 'CSE 1430', 'MATH 126']); // Mon 9:00, Mon 1:00, Wed 8:00
+});
+
+test('class blocks can lead with the course name instead of the code', () => {
+  const schedule = oneCourseSchedule();
+  Object.assign(schedule.style.blockDetails, { code: false, name: true });
+  const block = groups(layoutOf(schedule))[0];
+  const texts = textItems(block.items).map((t) => t.text);
+  assert.ok(texts[0].startsWith('Computer'));
+  assert.ok(!texts.includes('CSE 143'));
+  assert.equal(texts.filter((t) => t.includes('Computer')).length, texts[0] === 'Computer Programming II' ? 1 : 2); // name not repeated as a detail
+});
+
+test('title can be centered, clear of the view label', () => {
+  const schedule = oneCourseSchedule();
+  schedule.style.titleAlign = 'center';
+  const layout = layoutOf(schedule);
+  const title = textItems(layout.items).find((t) => t.text === 'Winter 2027');
+  const center = title.x + measure(title.text, title.size) / 2;
+  assert.ok(Math.abs(center - layout.width / 2) < 0.01);
+});
+
+test('day names and dates follow the chosen formats', () => {
+  const schedule = oneCourseSchedule();
+  const firstWeekTexts = () => textItems(layoutOf(schedule, 'week1').items).map((t) => t.text);
+  schedule.style.dayFormat = 'long';
+  schedule.style.dateFormat = 'numeric';
+  assert.ok(firstWeekTexts().includes('Tuesday'));
+  assert.ok(firstWeekTexts().includes('1/5'));
+  assert.ok(firstWeekTexts().includes('Week of 1/4'));
+  schedule.style.dayFormat = 'letter';
+  schedule.style.dateFormat = 'day-month';
+  assert.ok(firstWeekTexts().includes('Tu'));
+  assert.ok(firstWeekTexts().includes('5 Jan'));
+});
+
+test('half-hour lines and striped off days can be turned off', () => {
+  const schedule = oneCourseSchedule();
+  const halfLines = () => layoutOf(schedule, 'week1').items.filter((i) => i.type === 'line' && i.color === TSB.pageTheme.pagePalette(schedule.style).halfHour).length;
+  assert.ok(halfLines() > 0);
+  assert.equal(layoutOf(schedule, 'week1').items.filter((i) => i.type === 'hatch').length, 1); // Monday before classes
+
+  schedule.style.halfHourLines = false;
+  schedule.style.stripeOffDays = false;
+  assert.equal(halfLines(), 0);
+  const items = layoutOf(schedule, 'week1').items;
+  assert.equal(items.filter((i) => i.type === 'hatch').length, 0);
+  assert.ok(items.some((i) => i.type === 'rect' && i.fill === TSB.pageTheme.pagePalette(schedule.style).offDay));
 });
 
 /* ---------- hours and days ---------- */
@@ -207,4 +274,14 @@ test('switching course palettes recolors palette colors and keeps custom ones', 
   assert.equal(recolored[0].color, COURSE_PALETTES.colorblind[2]);
   assert.equal(recolored[1].color, '#123456');
   assert.equal(TSB.schedule.recolorCourses(recolored, 'colorblind', 'standard')[0].color, COURSE_PALETTES.standard[2]);
+});
+
+test('week can start on Sunday', () => {
+  const schedule = oneCourseSchedule();
+  schedule.style.weekStart = 'sunday';
+  schedule.style.days = 'all';
+  const week1 = buildWeekView(schedule, 'week1');
+  assert.deepEqual(week1.days.map((d) => d.dayOfWeek), [0, 1, 2, 3, 4, 5, 6]);
+  assert.equal(week1.rangeLabel, 'Week of Jan 3');
+  assert.equal(TSB.dates.toIsoDate(TSB.schedule.finalsWeekStart(schedule)), '2027-03-14'); // Sunday before the Mar 15 final
 });

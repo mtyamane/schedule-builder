@@ -57,3 +57,12 @@ test('formatDays lists days Monday first', () => {
   assert.equal(d.formatDays([4, 2]), 'TuTh');
   assert.equal(d.formatDays([0, 6]), 'SaSu');
 });
+
+test('startOfWeek, formatDayName and formatShortDate', () => {
+  const tue = d.parseDate('2027-01-05');
+  assert.equal(d.toIsoDate(d.startOfWeek(tue)), '2027-01-04');
+  assert.equal(d.toIsoDate(d.startOfWeek(tue, 'sunday')), '2027-01-03');
+  assert.equal(d.toIsoDate(d.startOfWeek(d.parseDate('2027-01-03'), 'sunday')), '2027-01-03');
+  assert.deepEqual([d.formatDayName(1), d.formatDayName(1, 'long'), d.formatDayName(1, 'letter')], ['Mon', 'Monday', 'M']);
+  assert.deepEqual([d.formatShortDate(tue), d.formatShortDate(tue, 'numeric'), d.formatShortDate(tue, 'day-month')], ['Jan 5', '1/5', '5 Jan']);
+});
