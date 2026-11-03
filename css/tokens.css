@@ -21,10 +21,8 @@
   --accent: #2c3fc4;
   --accent-ink: #ffffff;
   --accent-soft: #e3e7fb;
-  --warn: #a4510b;
-  --warn-soft: #fdf0e3;
-  --ok: #227a4a;
   --danger: #b3261e;
+  --danger-soft: #fdecea;
 
   /* Type: one typeface for the whole site (matches the calendar's "Clean" font). */
   --font: "DM Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -47,9 +45,7 @@
     --accent: #8f9bff;
     --accent-ink: #0f131b;
     --accent-soft: #232a4a;
-    --warn: #f0a35c;
-    --warn-soft: #2e2216;
-    --ok: #6fcf97;
+    --danger-soft: #3a1c1c;
     --danger: #ff8a80;
   }
 }

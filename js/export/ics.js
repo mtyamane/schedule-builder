@@ -1,9 +1,12 @@
 /**
  * iCalendar (.ics) export.
  *
- * Each meeting becomes one weekly repeating event from the first day of
- * classes through the last day of instruction, with holidays excluded.
- * Each final exam becomes a single event. Times use the person's time zone.
+ * Each meeting pattern becomes ONE weekly repeating event covering all of its
+ * days (e.g. a Mon/Wed/Fri lecture is a single series with BYDAY=MO,WE,FR),
+ * from the first day of classes through the last day of instruction, with
+ * holidays excluded. Each final exam is a single event. Times are wall-clock
+ * times in the person's time zone, which is described in a VTIMEZONE block so
+ * calendar apps place every occurrence correctly across daylight-saving changes.
  */
 (function (TSB) {
   'use strict';
@@ -11,6 +14,7 @@
   const { ICS_DAY_CODES, WEEK_ORDER } = TSB.constants;
   const { parseDate, parseTime, addDays, toIsoDate } = TSB.dates;
   const model = TSB.schedule;
+  const { localToUtc, vtimezoneLines } = TSB.timeZone;
 
   const encoder = new TextEncoder();
   const pad2 = (n) => String(n).padStart(2, '0');
@@ -88,7 +92,14 @@
     const termStart = parseDate(schedule.termStart);
     const termEnd = parseDate(schedule.termEnd);
     const holidays = model.allHolidays(schedule).map((h) => parseDate(h.date));
-    const until = formatUtc(new Date(termEnd.getFullYear(), termEnd.getMonth(), termEnd.getDate(), 23, 59, 59));
+    // The series ends at the end of the last day of instruction in the class's
+    // time zone (UNTIL must be in UTC when DTSTART has a TZID).
+    const until = formatUtc(new Date(localToUtc(timeZone, termEnd.getFullYear(), termEnd.getMonth(), termEnd.getDate(), 24 * 60) - 1000));
+
+    // Describe the time zone for every year the term and its finals touch.
+    const finalYears = schedule.courses.filter(model.hasValidFinal).map((c) => parseDate(c.final.date).getFullYear());
+    const firstYear = termStart.getFullYear();
+    const lastYear = Math.max(termEnd.getFullYear(), ...finalYears);
 
     const lines = [
       'BEGIN:VCALENDAR',
@@ -98,6 +109,7 @@
       'METHOD:PUBLISH',
       `X-WR-CALNAME:${escapeText(schedule.title || 'Class schedule')}`,
       `X-WR-TIMEZONE:${timeZone}`,
+      ...vtimezoneLines(timeZone, firstYear, lastYear),
     ];
 
     for (const course of schedule.courses) {
@@ -119,14 +131,14 @@
           `DTEND;TZID=${timeZone}:${formatLocal(first, end)}`,
           `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${until}`,
         );
-        for (const holiday of holidays) {
-          if (holiday >= termStart && holiday <= termEnd && meeting.days.includes(holiday.getDay())) {
-            lines.push(`EXDATE;TZID=${timeZone}:${formatLocal(holiday, start)}`);
-          }
-        }
+        // Holidays that fall on this meeting's days are skipped, all on one line.
+        const skipped = holidays
+          .filter((holiday) => holiday >= termStart && holiday <= termEnd && meeting.days.includes(holiday.getDay()))
+          .map((holiday) => formatLocal(holiday, start));
+        if (skipped.length) lines.push(`EXDATE;TZID=${timeZone}:${skipped.join(',')}`);
         if (meeting.location) lines.push(`LOCATION:${escapeText(meeting.location)}`);
         if (description) lines.push(`DESCRIPTION:${escapeText(description)}`);
-        lines.push(`COLOR:${course.color}`, 'END:VEVENT');
+        lines.push('END:VEVENT');
       }
 
       if (model.hasValidFinal(course)) {

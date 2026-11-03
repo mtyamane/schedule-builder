@@ -6,7 +6,7 @@ A single-page tool for planning a quarter or semester class schedule and getting
 - Optional final exam for each class
 - Three calendar views: **First week** (blocks out days before classes start and holidays), **Regular week**, and **Finals week**
 - Common holidays added automatically for the United States, Canada, or Japan, plus manual holidays
-- Export to **iCalendar (.ics)** with weekly repeating events and holidays skipped, or **CSV** in Google Calendar's import format
+- Export to **iCalendar (.ics)**: one weekly repeating series per meeting pattern (e.g. a Mon/Wed/Fri lecture is a single series), with holidays skipped and the time zone included, or **CSV** in Google Calendar's import format
 - Download any view as a **PNG** or **PDF**, or print it. The on-screen calendar is a live preview of that page
 - Personalize the page: paper size (Letter or A4), orientation, margins, font, exact text sizes in points, block details, header and legend (top, bottom, left, right or off), hours and days shown, block style, grayscale and a colorblind-safe palette
 - Settings on the left (**Schedule** and **Style** tabs) with a live page preview on the right that always shows the whole page at full window height; drag the divider between them to resize (double-click to reset). On phones, a bottom tab bar switches between Schedule, Style and Preview
@@ -52,6 +52,7 @@ js/
     page-theme.js       Page backgrounds and course block colors
     page-layout.js      Lays out a view as a printed page (shapes and text in points)
     history.js          Undo/redo history of schedule snapshots
+    time-zone.js        Time zone offsets and the VTIMEZONE block for .ics files
   export/
     ics.js              iCalendar export (unit tested)
     csv.js              Google Calendar CSV export (unit tested)

@@ -1,7 +1,7 @@
 /**
  * Header toolbar: undo/redo, Open and Save, the Export menu (calendar
  * files, images of the current view and the three-page PDF), the
- * "Not exported" chip, the example banner and the leave-page warning.
+ * save status, the example banner and the leave-page warning.
  */
 (function (TSB) {
   'use strict';
@@ -132,20 +132,26 @@
 
   /* ---------- status, banner, leave warning ---------- */
 
+  /** "Unsaved changes" after an edit; "Saved 4:52 PM" after a Save or export. */
   function renderStatus() {
-    const { schedule, hasUnexportedChanges, hasExported } = store.state;
-    const chip = byId('export-status');
+    const { schedule, hasUnexportedChanges, lastSavedAt } = store.state;
+    const status = byId('save-status');
+    const text = status.querySelector('.save-status__text');
     const hasContent = schedule.courses.length || schedule.title || schedule.termStart;
+
     if (hasUnexportedChanges && hasContent) {
-      chip.hidden = false;
-      chip.className = 'status-chip status-chip--warn';
-      chip.textContent = 'Not exported';
-    } else if (hasExported) {
-      chip.hidden = false;
-      chip.className = 'status-chip status-chip--ok';
-      chip.textContent = 'Exported';
+      status.hidden = false;
+      status.className = 'save-status save-status--unsaved';
+      text.textContent = 'Unsaved changes';
+      status.title = 'Use Save to keep a copy you can open later, or Export to add it to your calendar.';
+    } else if (lastSavedAt) {
+      const time = lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      status.hidden = false;
+      status.className = 'save-status save-status--saved';
+      text.textContent = `Saved ${time}`;
+      status.title = `Last saved or exported at ${time}.`;
     } else {
-      chip.hidden = true;
+      status.hidden = true;
     }
   }
 

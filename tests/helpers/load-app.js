@@ -17,6 +17,7 @@ const SCRIPTS = [
   'core/page-theme.js',
   'core/page-layout.js',
   'core/history.js',
+  'core/time-zone.js',
   'export/ics.js',
   'export/csv.js',
   'export/pdf.js',

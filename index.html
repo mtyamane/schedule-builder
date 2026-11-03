@@ -31,6 +31,7 @@
   <script defer src="js/core/page-theme.js"></script>
   <script defer src="js/core/page-layout.js"></script>
   <script defer src="js/core/history.js"></script>
+  <script defer src="js/core/time-zone.js"></script>
   <script defer src="js/export/ics.js"></script>
   <script defer src="js/export/csv.js"></script>
   <script defer src="js/export/pdf.js"></script>
@@ -51,11 +52,11 @@
 <body data-mobile-tab="schedule">
   <header class="app-header">
     <div class="brand">
-      <h1>Term Schedule Builder</h1>
-      <small>Quarter / Semester</small>
+      <h1>Schedule Builder</h1>
+      <!-- <small></small> -->
     </div>
     <div class="toolbar">
-      <span id="export-status" class="status-chip" hidden></span>
+      <span id="save-status" class="save-status" role="status" hidden><span class="save-status__mark" aria-hidden="true"></span><span class="save-status__text"></span></span>
       <div class="icon-group" role="group" aria-label="History">
         <button class="btn btn--icon" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4 2.5 7l3 3"/><path d="M2.5 7h7a4 4 0 0 1 0 8h-2"/></svg>
@@ -103,8 +104,8 @@
 
         <div class="card">
           <div class="section-head">
-            <h2>Term</h2>
-            <span class="eyebrow">Dates drive week 1 and exports</span>
+            <h2>Timespan (Academic Term)</h2>
+            <!-- <span class="eyebrow">Dates drive week 1 and exports</span> -->
           </div>
           <label class="field">Title (optional)
             <input type="text" class="input--large" id="term-title" placeholder="Winter Quarter 2027">
@@ -119,7 +120,7 @@
           </div>
           <p class="hint">If classes start midweek, week 1 blocks out the days before. Finals week uses the date above, or the week of your earliest final.</p>
 
-          <div class="section-head"><span class="eyebrow">Holidays<span class="sep">|</span>no classes</span></div>
+          <div class="section-head"><span class="eyebrow">Holidays<span class="sep">|</span>(no classes)</span></div>
           <div class="auto-holidays">
             <label class="checkbox"><input type="checkbox" id="auto-holidays"> Add common holidays automatically</label>
             <select id="holiday-region" aria-label="Holiday location">
@@ -293,7 +294,7 @@
       </div>
       <p class="calendar-note" id="calendar-note"></p>
       <div class="calendar-scroll"><div class="page-frame" id="calendar"></div></div>
-      <p class="hint preview-hint">Click a class to edit it. Overlapping classes are outlined in orange here; exports leave the outline off.</p>
+      <p class="hint preview-hint">Click a class to edit it. Overlapping classes are outlined in red here; exports leave the outline off.</p>
     </section>
   </main>
 

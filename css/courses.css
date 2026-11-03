@@ -100,8 +100,8 @@
   padding: 6px 10px;
   list-style: none;
   border-radius: 6px;
-  background: var(--warn-soft);
-  color: var(--warn);
+  background: var(--danger-soft);
+  color: var(--danger);
   font-size: 12.5px;
 }
 

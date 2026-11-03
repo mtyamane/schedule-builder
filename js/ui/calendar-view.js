@@ -15,7 +15,7 @@
   const store = TSB.store;
 
   const VIEW_ORDER = ['week1', 'weekly', 'finals'];
-  const OVERLAP_COLOR = '#e8590c';
+  const OVERLAP_COLOR = '#d42a2a';
   const round = (n) => Math.round(n * 100) / 100;
 
   /* ---------- SVG from the display list ---------- */
@@ -88,7 +88,7 @@
 
     const layout = buildPageLayout(schedule, viewKey, store.displayedCourses(), createTextMeasurer(font));
     const overlapCount = layout.view.events.filter((e) => e.overlaps).length;
-    const overlapNote = overlapCount ? `${overlapCount} overlapping class block${overlapCount === 1 ? ' is' : 's are'} outlined in orange.` : '';
+    const overlapNote = overlapCount ? `${overlapCount} overlapping class block${overlapCount === 1 ? ' is' : 's are'} outlined in red.` : '';
     byId('calendar-note').innerHTML = joinWithSeparators([layout.view.rangeLabel, layout.view.note, overlapNote]);
 
     const frame = byId('calendar');

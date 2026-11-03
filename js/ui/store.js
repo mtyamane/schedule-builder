@@ -11,7 +11,7 @@
  *   courses     course list and editor
  *   calendar    calendar preview
  *   style       Style tab controls
- *   status      "Not exported" chip
+ *   status      save status in the header
  *   banner      example-schedule banner
  *   history     undo/redo buttons
  *   navigation  Schedule/Style tabs and the phone tab bar
@@ -31,7 +31,8 @@
     isExample: true,
     /** True when there are changes not yet saved or exported. */
     hasUnexportedChanges: false,
-    hasExported: false,
+    /** @type {Date|null} when the schedule was last saved or exported */
+    lastSavedAt: null,
     /** @type {'week1'|'weekly'|'finals'} */
     view: 'weekly',
     /** @type {'schedule'|'style'} which tab the left pane shows */
@@ -95,7 +96,7 @@
   /** Record a successful export or save. */
   function markExported() {
     state.hasUnexportedChanges = false;
-    state.hasExported = true;
+    state.lastSavedAt = new Date();
     emit('status');
   }
 
@@ -106,7 +107,7 @@
 
   /** Replace the whole schedule (start blank or open a file); this also clears undo history. */
   function replaceSchedule(schedule) {
-    Object.assign(state, { schedule, isExample: false, hasUnexportedChanges: false, hasExported: false });
+    Object.assign(state, { schedule, isExample: false, hasUnexportedChanges: false, lastSavedAt: null });
     closeEditor();
     history.reset(snapshot());
     emitAll();
