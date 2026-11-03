@@ -75,7 +75,8 @@
     set('summary-sizes', [preset ? PRESET_NAMES[preset] : 'Custom', `Title ${s.fontSizes.title} pt`]);
     const shown = Object.entries(s.blockDetails).filter(([, on]) => on).map(([key]) => DETAIL_NAMES[key]);
     set('summary-blocks', [shown.length ? shown.join(', ') : 'Code only']);
-    set('summary-header', [s.legend === 'off' ? 'No legend' : `Legend ${s.legend}`]);
+    const legendExtras = ['instructor', 'room'].filter((key) => s.legendDetails[key]).map((key) => capitalize(key));
+    set('summary-header', s.legend === 'off' ? ['No legend'] : [`Legend ${s.legend}`, ...legendExtras]);
     const hours = s.hourStart === null && s.hourEnd === null
       ? 'Auto hours'
       : `${s.hourStart === null ? 'Auto' : formatHour(s.hourStart, s.clock)}–${s.hourEnd === null ? 'Auto' : formatHour(s.hourEnd, s.clock)}`;
@@ -102,6 +103,10 @@
 
     for (const [key, shown] of Object.entries(current.blockDetails)) byId(`detail-${key}`).checked = shown;
     for (const [key, shown] of Object.entries(current.header)) byId(`header-${key}`).checked = shown;
+    for (const [key, shown] of Object.entries(current.legendDetails)) byId(`legend-${key}`).checked = shown;
+    // Legend details only matter when there is a legend.
+    byId('legend-details-row').hidden = current.legend === 'off';
+    byId('legend-details-hint').hidden = current.legend === 'off';
     byId('style-grayscale').checked = current.grayscale;
 
     byId('hour-start').innerHTML = hourOptionsHtml(current.hourStart, 0, 23, current.clock);
@@ -154,7 +159,7 @@
   /** While typing a size, update the calendar but leave the field alone. */
   function onInput(event) {
     const target = event.target;
-    const { fontSize, detail, header } = target.dataset;
+    const { fontSize, detail, header, legendDetail } = target.dataset;
 
     if (fontSize) {
       const value = model.clampFontSize(fontSize, target.value);
@@ -165,6 +170,10 @@
       store.markChanged('calendar');
     } else if (detail) {
       style().blockDetails[detail] = target.checked;
+      renderSummaries();
+      store.markChanged('calendar');
+    } else if (legendDetail) {
+      style().legendDetails[legendDetail] = target.checked;
       renderSummaries();
       store.markChanged('calendar');
     } else if (header) {

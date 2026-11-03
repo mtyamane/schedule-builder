@@ -142,7 +142,19 @@
     const swatch = legendSize * 0.95;
     const swatchGap = legendSize * 0.5;
     const legendCourses = [...new Map(view.events.map((e) => [e.course.id, e.course])).values()];
-    const legendParts = (course) => [`${course.code}${course.name ? ` ${course.name}` : ''}`, course.instructor].filter(Boolean);
+    /**
+     * Legend text for a course: the code (plus name, if chosen) first, then
+     * the instructor and the main meeting's room, if chosen and filled in.
+     */
+    const legendParts = (course) => {
+      const show = style.legendDetails;
+      const room = course.meetings[0] && course.meetings[0].location;
+      return [
+        `${course.code}${show.name && course.name ? ` ${course.name}` : ''}`,
+        show.instructor && course.instructor,
+        show.room && room,
+      ].filter(Boolean);
+    };
     const legendWidthOf = widthFn(legendSize, 400, 'body');
     const legendItems = [];
     // Top and bottom legends are rows across the page; left and right legends are a column.
@@ -178,11 +190,13 @@
       legendColumnWidth = Math.min(swatch + swatchGap + widest, contentWidth * 0.26);
       const textWidth = legendColumnWidth - swatch - swatchGap;
       for (const course of legendCourses) {
-        const [first, instructor] = legendParts(course);
+        // First line(s): code and name. Then one muted line each for instructor and room.
+        const [first, ...extras] = legendParts(course);
         const lines = wrap(first, textWidth, legendWidthOf);
-        if (instructor) lines.push(truncate(instructor, textWidth, legendWidthOf));
+        const mutedFrom = lines.length;
+        extras.forEach((extra) => lines.push(truncate(extra, textWidth, legendWidthOf)));
         const x = style.legend === 'left' ? margin : margin + contentWidth - legendColumnWidth;
-        legendItems.push({ course, x, lines, mutedFrom: instructor ? lines.length - 1 : lines.length });
+        legendItems.push({ course, x, lines, mutedFrom });
       }
     }
 

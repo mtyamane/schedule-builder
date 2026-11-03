@@ -112,7 +112,7 @@ test('legend position changes the grid area', () => {
   assert.ok(gridBottom(bottom) < gridBottom(off));
   assert.ok(gridRight(right) < gridRight(off));
   assert.equal(gridBottom(right), gridBottom(off));
-  assert.ok(textItems(right.items).some((t) => t.text === 'Prof. Lin'));
+  assert.ok(!textItems(right.items).some((t) => t.text === 'Prof. Lin')); // instructor is off by default
 
   // Top: the grid moves down and the legend sits above it.
   assert.ok(gridTop(top) > gridTop(off));
@@ -123,6 +123,32 @@ test('legend position changes the grid area', () => {
   assert.ok(gridLeft(left) > gridLeft(off));
   assert.equal(gridRight(left), gridRight(off));
   assert.ok(legendText(left).x < gridLeft(left));
+});
+
+test('legend shows course name, instructor and room only when chosen', () => {
+  const schedule = oneCourseSchedule();
+  const legendLines = () => {
+    const layout = layoutOf(schedule);
+    const bodyBottom = Math.max(...layout.items.filter((i) => i.type === 'line').map((i) => i.y2));
+    // Bottom legend: body text below the grid (hour labels use the code role). Rebuild each entry from its pieces.
+    return textItems(layout.items).filter((t) => t.y > bodyBottom && t.role === 'body').map((t) => t.text).join('');
+  };
+
+  assert.equal(legendLines(), 'CSE 143 Computer Programming II'); // defaults: name on, instructor and room off
+
+  schedule.style.legendDetails = { name: false, instructor: false, room: false };
+  assert.equal(legendLines(), 'CSE 143');
+
+  schedule.style.legendDetails = { name: true, instructor: true, room: true };
+  assert.equal(legendLines(), 'CSE 143 Computer Programming II | Prof. Lin | Kane Hall 130');
+
+  // Column legends put the instructor and room on their own muted lines.
+  schedule.style.legend = 'right';
+  const layout = layoutOf(schedule);
+  const texts = textItems(layout.items);
+  const palette = TSB.pageTheme.pagePalette(schedule.style);
+  assert.equal(texts.find((t) => t.text === 'Prof. Lin').color, palette.muted);
+  assert.equal(texts.find((t) => t.text === 'Kane Hall 130' && t.color === palette.muted).text, 'Kane Hall 130');
 });
 
 /* ---------- hours and days ---------- */

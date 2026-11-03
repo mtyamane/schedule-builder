@@ -47,6 +47,7 @@
    * @property {{name: boolean, time: boolean, room: boolean, instructor: boolean, type: boolean}} blockDetails
    * @property {{subtitle: boolean, viewLabel: boolean, weekRange: boolean}} header  which header items show
    * @property {'top'|'bottom'|'left'|'right'|'off'} legend
+   * @property {{name: boolean, instructor: boolean, room: boolean}} legendDetails  what each legend entry shows after the course code
    * @property {{paper: 'letter'|'a4', orientation: 'landscape'|'portrait', margins: 'narrow'|'normal'|'wide'}} page
    * @property {number|null} hourStart  first hour shown (0–23), or null for automatic
    * @property {number|null} hourEnd    last hour shown (1–24), or null for automatic
@@ -88,6 +89,7 @@
       blockDetails: { name: false, time: true, room: true, instructor: false, type: true },
       header: { subtitle: true, viewLabel: true, weekRange: true },
       legend: 'bottom',
+      legendDetails: { name: true, instructor: false, room: false },
       page: { paper: 'letter', orientation: 'landscape', margins: 'normal' },
       hourStart: null,
       hourEnd: null,
@@ -454,6 +456,7 @@
       blockDetails: Object.fromEntries(Object.entries(defaults.blockDetails).map(([key, value]) => [key, boolOr(details[key], value)])),
       header: Object.fromEntries(Object.entries(defaults.header).map(([key, value]) => [key, boolOr(header[key], value)])),
       legend: pickOne(raw.legend, ['top', 'bottom', 'left', 'right', 'off'], 'bottom'),
+      legendDetails: Object.fromEntries(Object.entries(defaults.legendDetails).map(([key, value]) => [key, boolOr((raw.legendDetails || {})[key], value)])),
       page: {
         paper: pickOne(page.paper, Object.keys(PAPER_SIZES), 'letter'),
         orientation: pickOne(page.orientation, ['landscape', 'portrait'], 'landscape'),
